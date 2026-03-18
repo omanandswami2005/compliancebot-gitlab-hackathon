@@ -1,0 +1,9 @@
+name: compliance-reporter
+description: >
+  Generates human-readable compliance reports from structured evidence.
+visibility: public
+type: custom
+model: claude-sonnet-4
+context:
+  - workspace_agent_skills
+output_format: markdown
