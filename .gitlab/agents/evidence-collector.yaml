@@ -1,0 +1,9 @@
+name: evidence-collector
+description: >
+  Gathers and packages audit evidence from GitLab activity.
+visibility: public
+type: custom
+model: claude-sonnet-4
+context:
+  - project
+output_format: json

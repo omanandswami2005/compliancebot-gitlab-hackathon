@@ -1,0 +1,9 @@
+name: compliance-mapper
+description: >
+  Maps raw scanner findings to specific compliance framework controls.
+visibility: public
+type: custom
+model: claude-sonnet-4
+context:
+  - compliance_config
+output_format: json

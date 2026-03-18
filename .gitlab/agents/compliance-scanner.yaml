@@ -1,0 +1,13 @@
+name: compliance-scanner
+description: >
+  Scans GitLab merge requests and pipelines for compliance signals.
+  Maps findings to SOC 2, ISO 27001, PCI-DSS, and HIPAA controls.
+visibility: public
+type: custom
+model: claude-sonnet-4
+context:
+  - merge_request_diff
+  - pipeline_results
+  - vulnerability_report
+  - commit_history
+output_format: json

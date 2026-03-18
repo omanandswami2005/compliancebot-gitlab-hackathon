@@ -1,0 +1,77 @@
+# .gitlab/flows/compliance-flow.yaml
+name: compliance-bot-flow
+description: >
+  Multi-agent compliance analysis flow. Scans MRs and pipelines,
+  maps findings to compliance controls, collects evidence, and
+  generates audit-ready reports.
+version: "1.0"
+visibility: public
+
+triggers:
+  - type: merge_request
+    events:
+      - opened
+      - updated
+  - type: pipeline
+    events:
+      - success
+      - failed
+    branches:
+      - main
+      - production
+  - type: schedule
+    cron: "0 2 * * 1"  # Every Monday at 2 AM — weekly compliance digest
+
+components:
+  - name: scanner
+    type: AgentComponent
+    agent: compliance-scanner
+    inputs:
+      - from: "context:merge_request"
+        as: "mr_context"
+      - from: "context:pipeline"
+        as: "pipeline_context"
+      - from: "context:vulnerability_report"
+        as: "vuln_report"
+
+  - name: mapper
+    type: AgentComponent
+    agent: compliance-mapper
+    depends_on: [scanner]
+    inputs:
+      - from: "steps.scanner.output"
+        as: "findings"
+      - from: "context:compliance_config"
+        as: "frameworks"
+
+  - name: evidence
+    type: AgentComponent
+    agent: evidence-collector
+    depends_on: [mapper]
+    inputs:
+      - from: "steps.mapper.output"
+        as: "mapped_controls"
+      - from: "context:project"
+        as: "project_info"
+
+  - name: reporter
+    type: AgentComponent
+    agent: compliance-reporter
+    depends_on: [evidence]
+    inputs:
+      - from: "steps.evidence.output"
+        as: "evidence_package"
+      - from: "context:workspace_agent_skills"
+        as: "workspace_agent_skills"
+        optional: true
+
+outputs:
+  - type: gitlab_issue
+    title: "🔒 Compliance Report — {{ trigger.ref }}"
+    labels: ["compliance", "automated"]
+  - type: mr_comment
+    condition: "trigger.type == 'merge_request'"
+    template: "compliance_score_badge"
+  - type: ci_artifact
+    path: "compliance-report.pdf"
+    expire_in: "90 days"

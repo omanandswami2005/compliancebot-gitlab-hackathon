@@ -1,0 +1,88 @@
+# .gitlab-ci.yml
+stages:
+  - test
+  - security
+  - compliance
+  - report
+
+variables:
+  PYTHON_VERSION: "3.11"
+  COMPLIANCE_FRAMEWORKS: "soc2,iso27001,pci-dss"
+
+# ── Standard Pipeline ───────────────────────────────
+unit-tests:
+  stage: test
+  image: python:3.11-slim
+  script:
+    - pip install -r requirements.txt
+    - pytest tests/ -v --tb=short
+  coverage: '/TOTAL.*\s+(\d+%)$/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
+sast:
+  stage: security
+  include:
+    - template: Security/SAST.gitlab-ci.yml
+
+dependency-scanning:
+  stage: security
+  include:
+    - template: Security/Dependency-Scanning.gitlab-ci.yml
+
+secret-detection:
+  stage: security
+  include:
+    - template: Security/Secret-Detection.gitlab-ci.yml
+
+# ── ComplianceBot Flow ──────────────────────────────
+compliance-scan-mr:
+  stage: compliance
+  image: python:3.11-slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  before_script:
+    - pip install -r requirements.txt python-gitlab
+  script:
+    - python src/agents/scanner.py --mode mr --mr-iid $CI_MERGE_REQUEST_IID
+    - python src/agents/mapper.py
+    - python src/agents/evidence_collector.py --mode sprint
+    - python src/agents/reporter.py --output mr-comment
+  artifacts:
+    paths:
+      - compliance-report.json
+    expire_in: 30 days
+
+compliance-weekly-report:
+  stage: compliance
+  image: python:3.11-slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+  before_script:
+    - pip install -r requirements.txt python-gitlab
+  script:
+    - python src/agents/scanner.py --mode full --period 30d
+    - python src/agents/mapper.py
+    - python src/agents/evidence_collector.py --mode full --period 30d
+    - python src/agents/reporter.py --output issue,pdf
+  artifacts:
+    paths:
+      - compliance-report.pdf
+      - evidence-package.json
+    expire_in: 365 days  # Keep for audit purposes
+
+upload-to-gcs:
+  stage: report
+  image: google/cloud-sdk:slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+  script:
+    - echo $GCP_SERVICE_ACCOUNT_KEY | base64 -d > /tmp/sa-key.json
+    - gcloud auth activate-service-account --key-file=/tmp/sa-key.json
+    - gsutil cp compliance-report.pdf gs://compliance-evidence-${CI_PROJECT_ID}/
+    - gsutil cp evidence-package.json gs://compliance-evidence-${CI_PROJECT_ID}/
+  dependencies:
+    - compliance-weekly-report

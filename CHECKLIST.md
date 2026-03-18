@@ -24,12 +24,12 @@ Track progress: Replace `[ ]` with `[x]` as you complete each item.
 ## 🏗 PHASE 1 — Repository & Project Structure
 *Reference: [Research Guide §9 — Project Structure](#)*
 
-- [ ] Create directory structure as defined in §9
-- [ ] Add `README.md` with project description, installation steps, and architecture diagram
-- [ ] Add `AGENTS.md` at repo root → see §10 for template
-- [ ] Create `skills/compliance-scan/SKILL.md` → see §10 for template
-- [ ] Create `skills/report-generator/SKILL.md`
-- [ ] Add `requirements.txt`:
+- [x] Create directory structure as defined in §9
+- [x] Add `README.md` with project description, installation steps, and architecture diagram
+- [x] Add `AGENTS.md` at repo root → see §10 for template
+- [x] Create `skills/compliance-scan/SKILL.md` → see §10 for template
+- [x] Create `skills/report-generator/SKILL.md`
+- [x] Add `requirements.txt`:
   ```
   python-gitlab>=4.0.0
   anthropic>=0.25.0
@@ -39,7 +39,7 @@ Track progress: Replace `[ ]` with `[x]` as you complete each item.
   jinja2>=3.0.0
   pytest>=7.0.0
   ```
-- [ ] Add `.gitignore` (exclude `.env`, `*.pyc`, `__pycache__`, `/reports`)
+- [x] Add `.gitignore` (exclude `.env`, `*.pyc`, `__pycache__`, `/reports`)
 
 ---
 
@@ -47,30 +47,30 @@ Track progress: Replace `[ ]` with `[x]` as you complete each item.
 *Reference: [Research Guide §5 — Agent Design](#)*
 
 ### Agent 1: ComplianceScanner
-- [ ] Create `.gitlab/agents/compliance-scanner.yaml` → see §5 for YAML skeleton
-- [ ] Implement `src/agents/scanner.py` → full code in §9
-- [ ] Implement `_analyze_auth_change()` method
-- [ ] Implement `_analyze_dependency_change()` method
-- [ ] Implement `_analyze_encryption_change()` method
-- [ ] Implement `_pull_sast_findings()` method
+- [x] Create `.gitlab/agents/compliance-scanner.yaml` → see §5 for YAML skeleton
+- [x] Implement `src/agents/scanner.py` → full code in §9
+- [x] Implement `_analyze_auth_change()` method
+- [x] Implement `_analyze_dependency_change()` method
+- [x] Implement `_analyze_encryption_change()` method
+- [x] Implement `_pull_sast_findings()` method
 - [ ] Write unit tests `tests/test_scanner.py`
 - [ ] Create fixture `tests/fixtures/sample_mr_diff.json`
 - [ ] Publish agent to AI Catalog as **Public**
 
 ### Agent 2: ComplianceMapper
-- [ ] Create `.gitlab/agents/compliance-mapper.yaml`
-- [ ] Implement `src/agents/mapper.py`
-- [ ] Create `src/frameworks/soc2_controls.json` with all CC controls
-- [ ] Create `src/frameworks/iso27001_controls.json` with Annex A controls
-- [ ] Create `src/frameworks/pci_dss_controls.json` with Requirements 6,7,8,10,12
-- [ ] Create `src/frameworks/hipaa_controls.json` with Technical Safeguards
+- [x] Create `.gitlab/agents/compliance-mapper.yaml`
+- [x] Implement `src/agents/mapper.py`
+- [x] Create `src/frameworks/soc2_controls.json` with all CC controls
+- [x] Create `src/frameworks/iso27001_controls.json` with Annex A controls
+- [x] Create `src/frameworks/pci_dss_controls.json` with Requirements 6,7,8,10,12
+- [x] Create `src/frameworks/hipaa_controls.json` with Technical Safeguards
 - [ ] Implement `CONTROL_MAPPINGS` dict → see §5 for mappings
 - [ ] Implement compliance score calculation (0–100)
 - [ ] Write unit tests `tests/test_mapper.py`
 - [ ] Publish agent to AI Catalog as **Public**
 
 ### Agent 3: EvidenceCollector
-- [ ] Create `.gitlab/agents/evidence-collector.yaml`
+- [x] Create `.gitlab/agents/evidence-collector.yaml`
 - [ ] Implement `src/utils/evidence_builder.py` → full code in §9
 - [ ] Implement `collect_mr_approvals()` method
 - [ ] Implement `collect_pipeline_security_scans()` method
@@ -81,7 +81,7 @@ Track progress: Replace `[ ]` with `[x]` as you complete each item.
 - [ ] Publish agent to AI Catalog as **Public**
 
 ### Agent 4: ComplianceReporter
-- [ ] Create `.gitlab/agents/compliance-reporter.yaml`
+- [x] Create `.gitlab/agents/compliance-reporter.yaml`
 - [ ] Implement `src/agents/reporter.py`
 - [ ] Create `src/templates/compliance_report.md.j2` (Jinja2 Markdown template)
 - [ ] Create `src/templates/mr_comment_badge.md.j2` (MR badge comment template)
