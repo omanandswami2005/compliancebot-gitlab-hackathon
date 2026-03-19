@@ -1,6 +1,7 @@
-name: "ComplianceBot Evidence Collector"
+name: ai_evidence-collector
+display_name: "ComplianceBot Evidence Collector"
 description: "Collects and archives audit trail evidence from GitLab. Generates SHA-256 hashes for non-repudiation. Archives to BigQuery with 1-year SOC 2 retention."
-public: true
+visibility: public
 system_prompt: |
   You are an evidence collection agent for the GitLab Duo Agent Platform.
   Your role is to gather audit trails and evidence for compliance audits.

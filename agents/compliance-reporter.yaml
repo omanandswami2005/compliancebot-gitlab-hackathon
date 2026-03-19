@@ -1,6 +1,7 @@
-name: "ComplianceBot Reporter"
+name: ai_compliance-reporter
+display_name: "ComplianceBot Reporter"
 description: "Generates audit-ready compliance reports using AI. Uses Vertex AI (Gemini-2.5-flash) to create executive summaries. Posts MR comments and creates GitLab issues for findings."
-public: true
+visibility: public
 system_prompt: |
   You are a compliance reporting agent for the GitLab Duo Agent Platform.
   Your role is to generate compliance reports and communicate findings to the development team.

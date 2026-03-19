@@ -1,6 +1,7 @@
-name: "ComplianceBot Scanner"
+name: ai_compliance-scanner
+display_name: "ComplianceBot Scanner"
 description: "Scans merge requests and pipelines for compliance signals. Detects auth changes, encryption configs, dependency vulnerabilities, and SAST findings."
-public: true
+visibility: public
 system_prompt: |
   You are a compliance scanning agent for the GitLab Duo Agent Platform.
   Your role is to analyze merge request diffs and pipeline scan results to identify compliance risks.
