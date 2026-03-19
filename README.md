@@ -83,43 +83,74 @@ See [Agent Publishing Guide](docs/PUBLISHING_GUIDE.md) for step-by-step instruct
 
 ## Agents
 
-All agents are ready for publication to the GitLab AI Catalog:
+All agents are ready for publication to the GitLab AI Catalog. They are defined in `.gitlab/agents/` and use GitLab's agent YAML format.
 
-1. **ComplianceBot Scanner** ([.gitlab/agents/compliance-scanner.yaml](.gitlab/agents/compliance-scanner.yaml))
-   - Analyzes MRs and CI/CD pipelines
-   - Detects: auth changes, encryption configs, dependency vulnerabilities, SAST findings
-   - Maps findings to control IDs
+### 1. ComplianceBot Scanner
+**File**: [.gitlab/agents/compliance-scanner.yaml](.gitlab/agents/compliance-scanner.yaml)
 
-2. **ComplianceBot Mapper** ([.gitlab/agents/compliance-mapper.yaml](.gitlab/agents/compliance-mapper.yaml))
-   - Maps security findings to compliance controls
-   - Supports: SOC 2, ISO 27001, PCI-DSS, HIPAA
-   - Scores compliance readiness (0-100)
+- **Role**: Scans merge requests and pipelines for compliance signals
+- **Input**: MR diffs, pipeline results, vulnerability reports
+- **Detects**: Auth changes, encryption configs, dependency vulnerabilities, SAST findings
+- **Output**: JSON findings with severity, control IDs, remediation steps
+- **Tools**: `read_file`, `read_files`, `analyze_file_diff`
 
-3. **ComplianceBot Evidence Collector** ([.gitlab/agents/evidence-collector.yaml](.gitlab/agents/evidence-collector.yaml))
-   - Collects audit trails and evidence
-   - Features: MR approvals, pipeline results, access logs, SHA-256 hashing
-   - Archives to BigQuery with non-repudiation
+### 2. ComplianceBot Mapper
+**File**: [.gitlab/agents/compliance-mapper.yaml](.gitlab/agents/compliance-mapper.yaml)
 
-4. **ComplianceBot Reporter** ([.gitlab/agents/compliance-reporter.yaml](.gitlab/agents/compliance-reporter.yaml))
-   - Generates compliance reports using Vertex AI
-   - Creates GitLab issues for findings
-   - Posts MR comments with compliance badges
-   - Generates audit-ready PDFs
+- **Role**: Maps security findings to compliance framework controls
+- **Frameworks**: SOC 2, ISO 27001, PCI-DSS, HIPAA
+- **Output**: Control mappings, risk assessment, compliance score (0-100)
+- **Scoring**: 0-100 scale where 100 = fully audit-ready
+- **Tools**: `read_file`, `execute_query`, `log_analysis`
+
+### 3. ComplianceBot Evidence Collector
+**File**: [.gitlab/agents/evidence-collector.yaml](.gitlab/agents/evidence-collector.yaml)
+
+- **Role**: Collects and archives audit trail evidence from GitLab activity
+- **Collection Window**: Last 14 days (30 days for scheduled audits), max 500 MRs
+- **Evidence Type**: MR metadata, approvals, pipeline results, access logs
+- **Security**: SHA-256 hashing for non-repudiation
+- **Archive**: BigQuery with 1-year SOC 2 compliance retention
+- **Tools**: `read_file`, `execute_query`, `archive_data`, `generate_hash`
+
+### 4. ComplianceBot Reporter
+**File**: [.gitlab/agents/compliance-reporter.yaml](.gitlab/agents/compliance-reporter.yaml)
+
+- **Role**: Generates audit-ready compliance reports using Vertex AI
+- **Narrative**: Uses Gemini-2.5-flash for executive summaries
+- **Outputs**: 
+  - GitLab issues (for findings with severity >= medium)
+  - MR comments (only if score < 85)
+  - PDF reports (audit-ready, archived to GCS with 7-day signed URLs)
+- **Timeline**: Includes remediation timeline estimates (days to compliance)
+- **Tools**: `read_file`, `create_issue`, `post_comment`, `generate_pdf`, `archive_file`
 
 ## Flow
 
-The **compliance-flow** ([.gitlab/flows/compliance-flow.yaml](.gitlab/flows/compliance-flow.yaml)) orchestrates all 4 agents:
+The **ComplianceBot Flow** ([.gitlab/flows/compliance-flow.yaml](.gitlab/flows/compliance-flow.yaml)) orchestrates all 4 agents in sequence:
+
+**Architecture**:
+```
+Scanner → Mapper → Evidence Collector → Reporter
+```
 
 **Triggers:**
-- On MR created/updated
-- On pipeline success/failure (for main/production branches)
-- Weekly schedule (Monday 2 AM)
-- Manual trigger via Automate menu
+- ✅ Merge Request (opened or updated)
+- ✅ Pipeline (success or failure on main/production branches)
+- ✅ Schedule (Every Monday at 2 AM UTC)
+- ✅ Manual trigger via Automate → Flows menu
 
-**Output:**
-- GitLab issues for each finding
-- MR comments with compliance score (only for score < 85)
-- CI/CD artifacts with full PDF reports
+**Flow Components**:
+1. **Scanner**: Analyzes MR/pipeline for compliance signals
+2. **Mapper**: Maps findings to control IDs (SOC2, ISO27001, PCI-DSS, HIPAA)
+3. **Evidence Collector**: Gathers audit evidence (MR approvals, pipeline logs, access records)
+4. **Reporter**: Generates compliance report and posts findings
+
+**Outputs**:
+- **GitLab Issues**: One per finding (with control ID reference)
+- **MR Comments**: Compliance score badge (only if score < 85)
+- **CI/CD Artifacts**: PDF reports stored for 90 days
+- **BigQuery**: Evidence logged for historical trend analysis
 
 ## Documentation
 

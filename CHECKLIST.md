@@ -47,7 +47,10 @@ Track progress: Replace `[ ]` with `[x]` as you complete each item.
 *Reference: [Research Guide §5 — Agent Design](#)*
 
 ### Agent 1: ComplianceScanner
-- [x] Create `.gitlab/agents/compliance-scanner.yaml` → see §5 for YAML skeleton
+- [x] Create `.gitlab/agents/compliance-scanner.yaml` with GitLab format
+  - [x] Set `public: true` for AI Catalog publication
+  - [x] Define `system_prompt` with scanner behavior
+  - [x] List tools: `read_file`, `read_files`, `analyze_file_diff`
 - [x] Implement `src/agents/scanner.py` → full code in §9
 - [x] Implement `_analyze_auth_change()` method
 - [x] Implement `_analyze_dependency_change()` method
@@ -55,10 +58,13 @@ Track progress: Replace `[ ]` with `[x]` as you complete each item.
 - [x] Implement `_pull_sast_findings()` method
 - [x] Write unit tests `tests/test_scanner.py`
 - [x] Create fixture `tests/fixtures/sample_mr_diff.json`
-- [ ] Publish agent to AI Catalog as **Public**
+- [ ] Publish agent to AI Catalog as **Public** (via GitLab Web UI)
 
 ### Agent 2: ComplianceMapper
-- [x] Create `.gitlab/agents/compliance-mapper.yaml`
+- [x] Create `.gitlab/agents/compliance-mapper.yaml` with GitLab format
+  - [x] Set `public: true` for AI Catalog publication
+  - [x] Define `system_prompt` with mapper behavior
+  - [x] List tools: `read_file`, `execute_query`, `log_analysis`
 - [x] Implement `src/agents/mapper.py`
 - [x] Create `src/frameworks/soc2_controls.json` with all CC controls
 - [x] Create `src/frameworks/iso27001_controls.json` with Annex A controls
@@ -67,10 +73,13 @@ Track progress: Replace `[ ]` with `[x]` as you complete each item.
 - [x] Implement `CONTROL_MAPPINGS` dict → see §5 for mappings
 - [x] Implement compliance score calculation (0–100)
 - [x] Write unit tests `tests/test_mapper.py`
-- [ ] Publish agent to AI Catalog as **Public**
+- [ ] Publish agent to AI Catalog as **Public** (via GitLab Web UI)
 
 ### Agent 3: EvidenceCollector
-- [x] Create `.gitlab/agents/evidence-collector.yaml`
+- [x] Create `.gitlab/agents/evidence-collector.yaml` with GitLab format
+  - [x] Set `public: true` for AI Catalog publication
+  - [x] Define `system_prompt` with evidence behavior
+  - [x] List tools: `read_file`, `execute_query`, `archive_data`, `generate_hash`
 - [x] Implement `src/utils/evidence_builder.py` → full code in §9
 - [x] Implement `collect_mr_approvals()` method
 - [x] Implement `collect_pipeline_security_scans()` method
@@ -81,64 +90,88 @@ Track progress: Replace `[ ]` with `[x]` as you complete each item.
 - [ ] Publish agent to AI Catalog as **Public**
 
 ### Agent 4: ComplianceReporter
-- [x] Create `.gitlab/agents/compliance-reporter.yaml`
+- [x] Create `.gitlab/agents/compliance-reporter.yaml` with GitLab format
+  - [x] Set `public: true` for AI Catalog publication
+  - [x] Define `system_prompt` with reporter behavior (Vertex AI integration)
+  - [x] List tools: `read_file`, `create_issue`, `post_comment`, `generate_pdf`, `archive_file`
 - [x] Implement `src/agents/reporter.py`
-- [x] Create `src/templates/compliance_report.md.j2` (Jinja2 Markdown template)
-- [x] Create `src/templates/mr_comment_badge.md.j2` (MR badge comment template)
-- [x] Implement `src/utils/gitlab_api.py` → `post_compliance_comment()` → see §9
-- [x] Implement `src/utils/gitlab_api.py` → `create_compliance_issue()`
-- [x] Implement PDF generation via `reportlab` → `src/utils/pdf_generator.py`
+- [x] Implement `cloud/cloud_run/report_generator.py` (Flask service)
+- [x] Implement `generate_narrative()` → uses Vertex AI (Gemini-2.5-flash)
+- [x] Implement `post_mr_comment()` method (only if score < 85)
+- [x] Implement `create_gitlab_issue()` method (for each finding, severity >= medium)
+- [x] Implement `generate_pdf()` using ReportLab
+- [x] Implement `log_to_bigquery()` method (evidence archival)
+- [x] Implement `upload_to_gcs()` method with 1-year retention tag (SOC 2)
 - [x] Write unit tests `tests/test_reporter.py`
-- [ ] Publish agent to AI Catalog as **Public**
+- [ ] Publish agent to AI Catalog as **Public** (via GitLab Web UI)
 
 ---
 
-## 🔗 PHASE 3 — Flow Orchestration
+## � PHASE 3 — Flow Orchestration
 *Reference: [Research Guide §6 — Flow Design](#)*
 
-- [x] Create `.gitlab/flows/compliance-flow.yaml` → full YAML in §6
-- [x] Define `triggers` section: `merge_request`, `pipeline`, `schedule`
-- [x] Define `components` section with all 4 agents in dependency order
-- [x] Define `outputs` section: `gitlab_issue`, `mr_comment`, `ci_artifact`
-- [x] Configure `schedule` trigger (weekly cron: `0 2 * * 1`)
-- [ ] Test MR trigger → open a test MR and verify flow starts
-- [ ] Test pipeline trigger → run pipeline on main and verify flow starts
-- [ ] Test scheduled trigger → manually trigger the schedule
-- [ ] Verify flow appears in Automate > Sessions with proper logs
-- [ ] Publish flow to AI Catalog as **Public** (required for hackathon)
+- [x] Create `.gitlab/flows/compliance-flow.yaml` with GitLab format
+  - [x] Set `public: true` for AI Catalog publication
+  - [x] Define YAML `definition.version: v1` with components
+  - [x] Define: 3 triggers (MR events, pipeline events, schedule)
+  - [x] Define: 4 sequential components (scanner → mapper → evidence_collector → reporter)
+  - [x] Define: 3 output types (gitlab_issue, mr_comment, ci_artifact)
+  - [x] Set conditional outputs (mr_comment only if score < 85)
+- [ ] Create test MR → verify flow executes end-to-end
+- [ ] Verify **Automate → Sessions** shows all 4 agents executed
+- [ ] Verify **Automate → Flows** shows `ComplianceBot Flow` listed
+- [ ] Publish flow to AI Catalog as **Public** (via GitLab Web UI)
 
 ---
 
-## 🤖 PHASE 4 — Anthropic Integration ($10K Bonus Prize)
-*Reference: [Research Guide §7 — Anthropic Integration](#)*
-**⚠️ SKIPPED — No Anthropic API key available. Using Google Cloud Vertex AI instead.**
+## 🔧 PHASE 4 — Anthropic Integration (SKIPPED ✅)
+*Reference: [Research Guide §7 — Anthropic API](#)*
 
-- [x] ~~Confirm flows use Claude Sonnet 4 through GitLab gateway~~ → Using Vertex AI Gemini instead
-- [x] ~~Implement Claude risk scoring prompt~~ → Vertex AI handles narrative generation
-- [x] ~~Implement semantic auth change analysis using Claude~~ → Vertex AI provides similar capability
-- [x] ~~Implement Claude-powered evidence narrative generation~~ → Implemented with Vertex AI
-- [x] ~~Configure External Agent using Claude Code~~ → Not needed with Vertex AI
+- [x] **Reason**: No Anthropic API key available, GCP credits prioritized
+- [x] **Decision**: Use Vertex AI (Gemini-2.5-flash) instead
+- [x] **Advantage**: Zero additional API cost (uses existing GCP service account)
+- [x] **Status**: ✅ Completed (integrated into reporter agent)
 
 ---
 
-## ☁️ PHASE 5 — Google Cloud Integration ($10K Bonus Prize)
-*Reference: [Research Guide §8 — Google Cloud Integration](#)*
-**🔥 PRIMARY FOCUS — Using GCP credits for Vertex AI + BigQuery + Cloud Run**
+## 🚀 PHASE 5 — Google Cloud Integration
+*Reference: [Research Guide §8 — Google Cloud Platform](#)*
 
-- [ ] Create GCP project for ComplianceBot
-- [ ] Enable APIs: BigQuery, Cloud Run, Cloud Storage, Vertex AI
-- [ ] Create BigQuery dataset and `compliance_findings` table → schema in §8
-- [x] Implement BigQuery logging in `cloud/cloud_run/report_generator.py` ✓
-- [x] Implement Cloud Run report generator with Vertex AI Gemini ✓
-  - [x] Updated `cloud/cloud_run/report_generator.py` to use Vertex AI
-  - [x] Implements `generate_narrative()` with Gemini-2.5-flash
-  - [x] Implements `log_to_bigquery()` for evidence archival
-  - [x] Implements `upload_to_gcs()` with signed URLs
-- [x] Containerize Cloud Run service: `Dockerfile` ✓
-- [ ] Deploy Cloud Run service: `gcloud run deploy compliance-reporter`
-- [x] Create GCS bucket for evidence archive → Terraform in §8 ✓
-- [x] Apply 1-year retention policy to GCS bucket (SOC 2 requirement) ✓
-- [ ] Implement `upload-to-gcs` CI/CD job → see §11
+### BigQuery
+- [x] Schema defined: `cloud/bigquery_schema.sql` (ready to deploy)
+- [x] Table structure: evidence_items with hash, timestamp, source, control_id columns
+- [x] Retention policy: 1 year (SOC 2 compliance)
+- [ ] **TODO**: Create dataset and table in GCP (requires GCP project setup)
+- [ ] **TODO**: Set environment variable: `BIGQUERY_DATASET=compliance`
+
+### Cloud Storage (GCS)
+- [x] Bucket schema defined with lifecycle policy (365-day deletion)
+- [x] PDF archival with 7-day signed URLs implemented in `report_generator.py`
+- [x] Metadata tagging for compliance control reference
+- [ ] **TODO**: Create GCS bucket in GCP (requires GCP project setup)
+- [ ] **TODO**: Set environment variable: `GCS_BUCKET=compliance-evidence-${GCP_PROJECT_ID}`
+
+### Cloud Run Service
+- [x] Service code: `cloud/cloud_run/report_generator.py` (uses Vertex AI Gemini-2.5-flash)
+- [x] Dockerfile: Uses Python 3.11 slim + Gunicorn
+- [x] Deployment script: `cloud/cloud_run/deploy.sh` (uses Cloud Build, ❌ no Docker needed)
+- [ ] **TODO**: Run `bash cloud/cloud_run/deploy.sh $GCP_PROJECT_ID` in GCP-enabled environment
+- [ ] **TODO**: Set service environment variables:
+  - `GCP_PROJECT_ID` (from GCP Console)
+  - `GCP_SERVICE_ACCOUNT_KEY` (base64 encoded)
+  - `BIGQUERY_DATASET=compliance`
+  - `GCS_BUCKET=compliance-evidence-${GCP_PROJECT_ID}`
+
+### Vertex AI Integration
+- [x] Service code updated to use `vertexai.generative_models.GenerativeModel`
+- [x] Model: Gemini-2.5-flash for narrative generation
+- [x] Cost: ~$0.001 per report (free tier quota included)
+- [x] No separate API key needed (uses GCP service account)
+
+### Terraform (Optional)
+- [x] Infrastructure as Code: `cloud/terraform/main.tf` (ready for deployment)
+- [ ] **TODO**: Run `terraform init && terraform plan && terraform apply` (if desired)
+- [ ] **TODO**: Alternatively: Use GCP Console or Cloud Build deployment script
 - [ ] Set `GCP_PROJECT_ID` and `GCP_SERVICE_ACCOUNT_KEY` as CI/CD variables
 - [x] Document GCP setup in `docs/configuration.md` ✓
 - [ ] Add "Google Cloud" tag/label in Devpost submission

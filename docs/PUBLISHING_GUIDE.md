@@ -98,6 +98,43 @@ In GitLab Web UI:
 3. GitLab should show "MIT" badge on project page
 ```
 
+### 2.4 Verify Agent YAML Format
+Your agents must follow GitLab's required format:
+
+```yaml
+name: "Agent Name"
+description: "Clear description of what the agent does"
+public: true  # Required for AI Catalog publication
+system_prompt: |
+  Detailed system instructions for agent behavior
+tools:
+  - tool1
+  - tool2
+```
+
+✅ **All your agents already use this format!** Check:
+- `compliance-scanner.yaml` — Uses correct format with `public: true`
+- `compliance-mapper.yaml` — Uses correct format with `public: true`
+- `evidence-collector.yaml` — Uses correct format with `public: true`
+- `compliance-reporter.yaml` — Uses correct format with `public: true`
+
+Flow must also follow the format:
+
+```yaml
+name: "Flow Name"
+description: "Clear description of what the flow does"
+public: true
+definition:
+  version: v1
+  environment: ambient
+  triggers: [...]
+  components: [...]
+  outputs: [...]
+```
+
+✅ **Your flow already uses this format!** Check:
+- `compliance-flow.yaml` — Uses correct definition format with `public: true`
+
 ---
 
 ## Step 3: Enable Duo Agent Platform in Project

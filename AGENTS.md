@@ -11,31 +11,67 @@ ComplianceBot integrates with:
 - **Google Cloud BigQuery** — Evidence archival and compliance analytics
 - **Google Cloud Storage** — Long-term evidence retention with 1-year SOC 2 compliance
 
+## Agent Structure & Format
+
+All agents are defined in `.gitlab/agents/` using GitLab's agent format:
+
+```yaml
+name: "Agent Name"
+description: "What this agent does"
+public: true  # Set to true for AI Catalog publication
+system_prompt: |
+  Detailed system instructions for agent behavior
+tools:
+  - tool1
+  - tool2
+```
+
 ## Agent Behavior Guidelines
 
-### ComplianceScanner
-- Always include file paths in findings
-- Map every finding to at least one control ID
-- Never report informational findings for boilerplate files (README, CHANGELOG)
-- Treat dependency lock file changes as informational only unless CVEs are detected
+### ComplianceBot Scanner (`.gitlab/agents/compliance-scanner.yaml`)
+- **Purpose**: Analyze MRs and pipelines for compliance signals
+- **Input**: Merge request diffs, pipeline results, vulnerability reports
+- **Output**: JSON findings with severity, control IDs, remediation steps
+- **Behavior**:
+  - Always include file paths in findings
+  - Map every finding to at least one control ID (SOC2-CC6.1, ISO27001-A.8.2.3, etc.)
+  - Never report informational findings for boilerplate files (README, CHANGELOG)
+  - Treat dependency lock file changes as informational only unless CVEs are detected
+  - Detect: Auth changes, encryption configs, dependency vulnerabilities, SAST findings
 
-### ComplianceMapper
-- Primary framework: SOC 2 (always include)
-- Secondary frameworks: ISO 27001 (always), PCI-DSS (if payment-related code detected)
-- Use NIST SP 800-53 mapping as supplemental reference
-- Score 0-100 where 100 = fully audit-ready
+### ComplianceBot Mapper (`.gitlab/agents/compliance-mapper.yaml`)
+- **Purpose**: Map findings to compliance framework controls
+- **Input**: Finding list, compliance frameworks
+- **Output**: Control mappings, risk assessment, compliance score (0-100)
+- **Behavior**:
+  - Primary framework: SOC 2 (always include)
+  - Secondary frameworks: ISO 27001 (always), PCI-DSS (if payment-related code detected), HIPAA (if health data detected)
+  - Use NIST SP 800-53 as supplemental reference
+  - Score 0-100 where 100 = fully audit-ready
+  - Assess business risk and remediation priority
 
-### EvidenceCollector
-- Evidence collection period: current sprint (last 14 days) by default
-- For scheduled runs: collect last 30 days
-- Always include SHA-256 hash of evidence for non-repudiation
-- Maximum 500 MR records per collection run
+### ComplianceBot Evidence Collector (`.gitlab/agents/evidence-collector.yaml`)
+- **Purpose**: Gather audit trail evidence from GitLab activity
+- **Input**: Project context, mapped controls
+- **Output**: Evidence package with SHA-256 hashes, archived to BigQuery
+- **Behavior**:
+  - Evidence collection period: Last 14 days (default), 30 days for scheduled audits
+  - Collect: MR metadata, pipeline results, access logs, code reviews
+  - Always include SHA-256 hash of evidence for non-repudiation
+  - Maximum 500 MR records per collection run
+  - Archive to BigQuery with 1-year SOC 2 retention policy
 
-### ComplianceReporter
-- Tone: professional, auditor-friendly
-- Executive summary: max 3 sentences
-- Include remediation timeline estimates
-- Post MR comment only for score < 85 (avoid noise for passing MRs)
+### ComplianceBot Reporter (`.gitlab/agents/compliance-reporter.yaml`)
+- **Purpose**: Generate audit-ready compliance reports
+- **Input**: Evidence package, control mappings
+- **Output**: Executive summary, PDF report, GitLab issues, MR comments
+- **Behavior**:
+  - Tone: Professional, auditor-friendly
+  - Executive summary: Max 3 sentences, always includes compliance score (0-100)
+  - Include remediation timeline estimates (days to compliance)
+  - Post MR comment only if score < 85 (avoid alert fatigue)
+  - Generate audit-ready PDFs with evidence hashes and timestamps
+  - Use Vertex AI (Gemini-2.5-flash) for narrative generation
 
 ## Custom Compliance Controls
 This project adds these org-specific controls:
