@@ -14,8 +14,10 @@ variables:
 include:
   - component: gitlab.com/components/ai-catalog@0.0.10
     inputs:
-      source: .gitlab/duo # Where agent YAML files are located
-      # CATALOG_SYNC_TOKEN is automatically injected by policy
+      source: .gitlab/duo
+      agent_directory: .gitlab/duo
+      flow_directory: .gitlab/duo
+      # token: $CATALOG_SYNC_TOKEN is automatically injected by policy
 
 # ── Standard Pipeline ───────────────────────────────
 unit-tests:
