@@ -1,0 +1,7 @@
+name: "Test Agent"
+description: "Minimal test agent to verify AI Catalog sync"
+public: true
+system_prompt: |
+  You are a test agent for verifying AI Catalog sync functionality.
+tools:
+  - read_file
