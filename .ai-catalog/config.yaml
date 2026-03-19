@@ -1,0 +1,9 @@
+sources:
+  - type: directory
+    path: .ai-catalog/agents
+    include:
+      - "*.yaml"
+  - type: directory
+    path: .ai-catalog/flows
+    include:
+      - "*.yaml"
