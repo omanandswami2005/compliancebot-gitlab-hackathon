@@ -1,0 +1,31 @@
+{
+  "agents": [
+    {
+      "id": "compliance-scanner",
+      "name": "ComplianceBot Scanner",
+      "path": "agents/compliance-scanner.yaml"
+    },
+    {
+      "id": "compliance-mapper",
+      "name": "ComplianceBot Mapper",
+      "path": "agents/compliance-mapper.yaml"
+    },
+    {
+      "id": "evidence-collector",
+      "name": "ComplianceBot Evidence Collector",
+      "path": "agents/evidence-collector.yaml"
+    },
+    {
+      "id": "compliance-reporter",
+      "name": "ComplianceBot Reporter",
+      "path": "agents/compliance-reporter.yaml"
+    }
+  ],
+  "flows": [
+    {
+      "id": "compliance-flow",
+      "name": "ComplianceBot Flow",
+      "path": "flows/compliance-flow.yaml"
+    }
+  ]
+}
