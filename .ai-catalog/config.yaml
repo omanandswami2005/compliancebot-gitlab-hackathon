@@ -1,9 +1,25 @@
 sources:
   - type: directory
+    path: agents
+    include:
+      - "*.yaml"
+  - type: directory
+    path: flows
+    include:
+      - "*.yaml"
+  - type: directory
     path: .ai-catalog/agents
     include:
       - "*.yaml"
   - type: directory
     path: .ai-catalog/flows
+    include:
+      - "*.yaml"
+  - type: directory
+    path: .gitlab/agents
+    include:
+      - "*.yaml"
+  - type: directory
+    path: .gitlab/flows
     include:
       - "*.yaml"
