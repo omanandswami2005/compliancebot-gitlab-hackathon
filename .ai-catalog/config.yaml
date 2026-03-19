@@ -8,6 +8,8 @@ catalog:
         path: .ai-catalog/agents
       - type: directory
         path: .gitlab/agents
+      - type: directory
+        path: .gitlab/duo
   flows:
     sources:
       - type: directory
@@ -16,3 +18,5 @@ catalog:
         path: .ai-catalog/flows
       - type: directory
         path: .gitlab/flows
+      - type: directory
+        path: .gitlab/duo
