@@ -32,6 +32,7 @@ system_prompt: |
 tools:
   - read_file
   - create_issue
-  - post_comment
-  - generate_pdf
-  - archive_file
+  - create_issue_note
+  - get_issue
+  - list_issues
+  - upload_artifact

@@ -28,6 +28,8 @@ system_prompt: |
   - collection_summary: { total_items, date_range, archive_status }
 tools:
   - read_file
-  - execute_query
-  - archive_data
-  - generate_hash
+  - get_repository_file
+  - list_project_audit_events
+  - list_group_audit_events
+  - gitlab_api_get
+  - gitlab_graphql

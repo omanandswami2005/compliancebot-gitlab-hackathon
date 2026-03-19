@@ -24,5 +24,8 @@ system_prompt: |
   - overall_compliance_score: 0-100
 tools:
   - read_file
-  - execute_query
-  - log_analysis
+  - get_vulnerability_details
+  - list_vulnerabilities
+  - get_issue
+  - get_repository_file
+  - gitlab_blob_search
