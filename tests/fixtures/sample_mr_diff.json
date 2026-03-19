@@ -1,1 +1,58 @@
-{}
+{
+    "id": 98765,
+    "iid": 42,
+    "title": "Add JWT authentication to API endpoints",
+    "description": "Implements OAuth 2.0 token validation. Fixes security issue #345.",
+    "source_branch": "feat/jwt-auth",
+    "target_branch": "main",
+    "state": "opened",
+    "created_at": "2026-03-18T10:00:00Z",
+    "updated_at": "2026-03-18T14:30:00Z",
+    "author": {
+        "id": 10,
+        "name": "Alice Developer",
+        "username": "alice"
+    },
+    "approvals_before_merge": 1,
+    "approved_by": [],
+    "diffs": [
+        {
+            "old_path": "src/auth.js",
+            "new_path": "src/auth.js",
+            "a_mode": "100644",
+            "b_mode": "100644",
+            "new_file": false,
+            "renamed_file": false,
+            "deleted_file": false,
+            "diff": "--- a/src/auth.js\n+++ b/src/auth.js\n@@ -1,10 +1,25 @@\n const express = require('express');\n+const jwt = require('jsonwebtoken');\n \n function authenticateToken(req, res, next) {\n-  const authHeader = req.headers['authorization'];\n-  const token = authHeader && authHeader.split(' ')[1];\n-  if (!token) return res.sendStatus(401);\n-  if (!validateToken(token)) return res.sendStatus(403);\n-  next();\n+  const authHeader = req.headers['authorization'];\n+  const token = authHeader && authHeader.split(' ')[1];\n+  if (!token) return res.sendStatus(401);\n+  \n+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {\n+    if (err) return res.sendStatus(403);\n+    req.user = user;\n+    next();\n+  });\n }\n \n module.exports = { authenticateToken };"
+        },
+        {
+            "old_path": "src/database.js",
+            "new_path": "src/database.js",
+            "a_mode": "100644",
+            "b_mode": "100644",
+            "new_file": false,
+            "renamed_file": false,
+            "deleted_file": false,
+            "diff": "--- a/src/database.js\n+++ b/src/database.js\n@@ -1,8 +1,12 @@\n const mongoose = require('mongoose');\n+const crypto = require('crypto');\n \n async function connectDB() {\n   const conn = await mongoose.connect(process.env.MONGO_URI, {\n     useNewUrlParser: true,\n+    ssl: true,\n+    sslValidate: true,\n+    sslCA: process.env.CA_CERT,\n   });\n   return conn;\n }\n"
+        },
+        {
+            "old_path": "package.json",
+            "new_path": "package.json",
+            "a_mode": "100644",
+            "b_mode": "100644",
+            "new_file": false,
+            "renamed_file": false,
+            "deleted_file": false,
+            "diff": "--- a/package.json\n+++ b/package.json\n@@ -10,7 +10,7 @@\n   \"dependencies\": {\n     \"express\": \"^4.18.2\",\n-    \"mongoose\": \"^6.0.0\",\n+    \"mongoose\": \"^7.5.0\",\n-    \"jsonwebtoken\": \"^8.5.1\"\n+    \"jsonwebtoken\": \"^9.1.2\"\n   }\n }\n"
+        }
+    ],
+    "pipelines": [
+        {
+            "id": 123456,
+            "status": "success",
+            "created_at": "2026-03-18T10:05:00Z",
+            "finished_at": "2026-03-18T10:25:00Z"
+        }
+    ]
+}
