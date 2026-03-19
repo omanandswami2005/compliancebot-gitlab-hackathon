@@ -9,7 +9,7 @@ This guide walks you through publishing your ComplianceBot agents and flow to th
 ## Prerequisites
 
 ✅ **Completed Before Starting:**
-- All 4 agents created (`.gitlab/agents/*.yaml`)
+- All 4 agents created (`.gitlab/duo/*.yaml`)
 - Flow orchestration created (`.gitlab/flows/compliance-flow.yaml`)
 - Repository pushed to GitLab AI Hackathon group
 - GitLab PAT token with `api`, `read_api`, `write_repository` scopes
@@ -151,7 +151,7 @@ definition:
 ### 3.2 Verify Agent Configuration Files
 ```bash
 # Check that all agent files exist and have correct format
-ls -la .gitlab/agents/
+ls -la .gitlab/duo/
 
 # Should show:
 # - compliance-scanner.yaml
@@ -326,7 +326,7 @@ Show in demo:
 ### Issue: Agent Not Appearing in AI Catalog
 ```
 Solution:
-1. Ensure agent file in .gitlab/agents/YOUR-AGENT.yaml
+1. Ensure agent file in .gitlab/duo/YOUR-AGENT.yaml
 2. Verify YAML syntax is correct (use online validator)
 3. Check project is PUBLIC (not private)
 4. Check Duo Agent Platform is enabled

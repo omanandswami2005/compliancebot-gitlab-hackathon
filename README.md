@@ -83,10 +83,10 @@ See [Agent Publishing Guide](docs/PUBLISHING_GUIDE.md) for step-by-step instruct
 
 ## Agents
 
-All agents are ready for publication to the GitLab AI Catalog. They are defined in `.gitlab/agents/` and use GitLab's agent YAML format.
+All agents are ready for publication to the GitLab AI Catalog. They are defined in `.gitlab/duo/` and use GitLab's agent YAML format.
 
 ### 1. ComplianceBot Scanner
-**File**: [.gitlab/agents/compliance-scanner.yaml](.gitlab/agents/compliance-scanner.yaml)
+**File**: [.gitlab/duo/compliance-scanner.yaml](.gitlab/duo/compliance-scanner.yaml)
 
 - **Role**: Scans merge requests and pipelines for compliance signals
 - **Input**: MR diffs, pipeline results, vulnerability reports
@@ -95,7 +95,7 @@ All agents are ready for publication to the GitLab AI Catalog. They are defined 
 - **Tools**: `read_file`, `read_files`, `analyze_file_diff`
 
 ### 2. ComplianceBot Mapper
-**File**: [.gitlab/agents/compliance-mapper.yaml](.gitlab/agents/compliance-mapper.yaml)
+**File**: [.gitlab/duo/compliance-mapper.yaml](.gitlab/duo/compliance-mapper.yaml)
 
 - **Role**: Maps security findings to compliance framework controls
 - **Frameworks**: SOC 2, ISO 27001, PCI-DSS, HIPAA
@@ -104,7 +104,7 @@ All agents are ready for publication to the GitLab AI Catalog. They are defined 
 - **Tools**: `read_file`, `execute_query`, `log_analysis`
 
 ### 3. ComplianceBot Evidence Collector
-**File**: [.gitlab/agents/evidence-collector.yaml](.gitlab/agents/evidence-collector.yaml)
+**File**: [.gitlab/duo/evidence-collector.yaml](.gitlab/duo/evidence-collector.yaml)
 
 - **Role**: Collects and archives audit trail evidence from GitLab activity
 - **Collection Window**: Last 14 days (30 days for scheduled audits), max 500 MRs
@@ -114,7 +114,7 @@ All agents are ready for publication to the GitLab AI Catalog. They are defined 
 - **Tools**: `read_file`, `execute_query`, `archive_data`, `generate_hash`
 
 ### 4. ComplianceBot Reporter
-**File**: [.gitlab/agents/compliance-reporter.yaml](.gitlab/agents/compliance-reporter.yaml)
+**File**: [.gitlab/duo/compliance-reporter.yaml](.gitlab/duo/compliance-reporter.yaml)
 
 - **Role**: Generates audit-ready compliance reports using Vertex AI
 - **Narrative**: Uses Gemini-2.5-flash for executive summaries

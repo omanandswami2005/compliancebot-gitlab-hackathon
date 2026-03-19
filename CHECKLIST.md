@@ -47,8 +47,8 @@ Track progress: Replace `[ ]` with `[x]` as you complete each item.
 *Reference: [Research Guide §5 — Agent Design](#)*
 
 ### Agent 1: ComplianceScanner
-- [x] Create `.gitlab/agents/compliance-scanner.yaml` with GitLab format
-  - [x] Set `public: true` for AI Catalog publication
+- [x] Create `.gitlab/duo/compliance-scanner.yaml` with GitLab format
+  - [x] Set `visibility: public` for AI Catalog publication
   - [x] Define `system_prompt` with scanner behavior
   - [x] List tools: `read_file`, `read_files`, `analyze_file_diff`
 - [x] Implement `src/agents/scanner.py` → full code in §9
@@ -61,8 +61,8 @@ Track progress: Replace `[ ]` with `[x]` as you complete each item.
 - [ ] Publish agent to AI Catalog as **Public** (via GitLab Web UI)
 
 ### Agent 2: ComplianceMapper
-- [x] Create `.gitlab/agents/compliance-mapper.yaml` with GitLab format
-  - [x] Set `public: true` for AI Catalog publication
+- [x] Create `.gitlab/duo/compliance-mapper.yaml` with GitLab format
+  - [x] Set `visibility: public` for AI Catalog publication
   - [x] Define `system_prompt` with mapper behavior
   - [x] List tools: `read_file`, `execute_query`, `log_analysis`
 - [x] Implement `src/agents/mapper.py`
@@ -76,8 +76,8 @@ Track progress: Replace `[ ]` with `[x]` as you complete each item.
 - [ ] Publish agent to AI Catalog as **Public** (via GitLab Web UI)
 
 ### Agent 3: EvidenceCollector
-- [x] Create `.gitlab/agents/evidence-collector.yaml` with GitLab format
-  - [x] Set `public: true` for AI Catalog publication
+- [x] Create `.gitlab/duo/evidence-collector.yaml` with GitLab format
+  - [x] Set `visibility: public` for AI Catalog publication
   - [x] Define `system_prompt` with evidence behavior
   - [x] List tools: `read_file`, `execute_query`, `archive_data`, `generate_hash`
 - [x] Implement `src/utils/evidence_builder.py` → full code in §9
@@ -90,8 +90,8 @@ Track progress: Replace `[ ]` with `[x]` as you complete each item.
 - [ ] Publish agent to AI Catalog as **Public**
 
 ### Agent 4: ComplianceReporter
-- [x] Create `.gitlab/agents/compliance-reporter.yaml` with GitLab format
-  - [x] Set `public: true` for AI Catalog publication
+- [x] Create `.gitlab/duo/compliance-reporter.yaml` with GitLab format
+  - [x] Set `visibility: public` for AI Catalog publication
   - [x] Define `system_prompt` with reporter behavior (Vertex AI integration)
   - [x] List tools: `read_file`, `create_issue`, `post_comment`, `generate_pdf`, `archive_file`
 - [x] Implement `src/agents/reporter.py`
