@@ -10,11 +10,14 @@ variables:
   COMPLIANCE_FRAMEWORKS: "soc2,iso27001,pci-dss"
 
 # ── AI Catalog Sync Component ───────────────────────────────
-# Validates and syncs agents/flows to AI Catalog
+# Validates and syncs agents/flows to AI Catalog on tag push
+# Official docs: https://gitlab.com/components/ai-catalog
 include:
-  - component: gitlab.com/components/ai-catalog@0.0.10
+  - component: $CI_SERVER_HOST/components/ai-catalog/catalog-sync@0.0.1
     inputs:
-      source: .ai-catalog
+      agent_directory: 'agents'       # Where agent YAML files are located
+      flow_directory: 'flows'         # Where flow YAML files are located  
+      enable_in_project: 'false'      # Don't require group_id (simpler setup)
 
 # ── Standard Pipeline ───────────────────────────────
 unit-tests:
