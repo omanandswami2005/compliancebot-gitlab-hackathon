@@ -1,25 +1,18 @@
-sources:
-  - type: directory
-    path: agents
-    include:
-      - "*.yaml"
-  - type: directory
-    path: flows
-    include:
-      - "*.yaml"
-  - type: directory
-    path: .ai-catalog/agents
-    include:
-      - "*.yaml"
-  - type: directory
-    path: .ai-catalog/flows
-    include:
-      - "*.yaml"
-  - type: directory
-    path: .gitlab/agents
-    include:
-      - "*.yaml"
-  - type: directory
-    path: .gitlab/flows
-    include:
-      - "*.yaml"
+version: "1.0"
+catalog:
+  agents:
+    sources:
+      - type: directory
+        path: agents
+      - type: directory
+        path: .ai-catalog/agents
+      - type: directory
+        path: .gitlab/agents
+  flows:
+    sources:
+      - type: directory
+        path: flows
+      - type: directory
+        path: .ai-catalog/flows
+      - type: directory
+        path: .gitlab/flows
