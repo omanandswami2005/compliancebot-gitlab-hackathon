@@ -83,38 +83,38 @@ See [Agent Publishing Guide](docs/PUBLISHING_GUIDE.md) for step-by-step instruct
 
 ## Agents
 
-All agents are ready for publication to the GitLab AI Catalog. They are defined in `.gitlab/duo/` and use GitLab's agent YAML format.
+All agents are ready for publication to the GitLab AI Catalog. They are defined in `agents/` and use GitLab's agent YAML format.
 
 ### 1. ComplianceBot Scanner
-**File**: [.gitlab/duo/compliance-scanner.yaml](.gitlab/duo/compliance-scanner.yaml)
+**File**: [agents/compliance-scanner.yml](agents/compliance-scanner.yml)
 
 - **Role**: Scans merge requests and pipelines for compliance signals
 - **Input**: MR diffs, pipeline results, vulnerability reports
 - **Detects**: Auth changes, encryption configs, dependency vulnerabilities, SAST findings
 - **Output**: JSON findings with severity, control IDs, remediation steps
-- **Tools**: `read_file`, `read_files`, `analyze_file_diff`
+- **Official Tools**: `read_file`, `read_files`
 
 ### 2. ComplianceBot Mapper
-**File**: [.gitlab/duo/compliance-mapper.yaml](.gitlab/duo/compliance-mapper.yaml)
+**File**: [agents/compliance-mapper.yml](agents/compliance-mapper.yml)
 
 - **Role**: Maps security findings to compliance framework controls
 - **Frameworks**: SOC 2, ISO 27001, PCI-DSS, HIPAA
 - **Output**: Control mappings, risk assessment, compliance score (0-100)
 - **Scoring**: 0-100 scale where 100 = fully audit-ready
-- **Tools**: `read_file`, `execute_query`, `log_analysis`
+- **Official Tools**: `read_file`, `get_vulnerability_details`, `list_vulnerabilities`, `get_issue`, `get_repository_file`, `gitlab_blob_search`
 
 ### 3. ComplianceBot Evidence Collector
-**File**: [.gitlab/duo/evidence-collector.yaml](.gitlab/duo/evidence-collector.yaml)
+**File**: [agents/evidence-collector.yml](agents/evidence-collector.yml)
 
 - **Role**: Collects and archives audit trail evidence from GitLab activity
 - **Collection Window**: Last 14 days (30 days for scheduled audits), max 500 MRs
 - **Evidence Type**: MR metadata, approvals, pipeline results, access logs
 - **Security**: SHA-256 hashing for non-repudiation
 - **Archive**: BigQuery with 1-year SOC 2 compliance retention
-- **Tools**: `read_file`, `execute_query`, `archive_data`, `generate_hash`
+- **Official Tools**: `read_file`, `get_repository_file`, `list_project_audit_events`, `list_group_audit_events`, `gitlab_api_get`, `gitlab_graphql`
 
 ### 4. ComplianceBot Reporter
-**File**: [.gitlab/duo/compliance-reporter.yaml](.gitlab/duo/compliance-reporter.yaml)
+**File**: [agents/compliance-reporter.yml](agents/compliance-reporter.yml)
 
 - **Role**: Generates audit-ready compliance reports using Vertex AI
 - **Narrative**: Uses Gemini-2.5-flash for executive summaries
@@ -123,11 +123,11 @@ All agents are ready for publication to the GitLab AI Catalog. They are defined 
   - MR comments (only if score < 85)
   - PDF reports (audit-ready, archived to GCS with 7-day signed URLs)
 - **Timeline**: Includes remediation timeline estimates (days to compliance)
-- **Tools**: `read_file`, `create_issue`, `post_comment`, `generate_pdf`, `archive_file`
+- **Official Tools**: `read_file`, `create_issue`, `create_issue_note`, `get_issue`, `list_issues`
 
 ## Flow
 
-The **ComplianceBot Flow** ([.gitlab/flows/compliance-flow.yaml](.gitlab/flows/compliance-flow.yaml)) orchestrates all 4 agents in sequence:
+The **ComplianceBot Flow** ([flows/compliance-flow.yml](flows/compliance-flow.yml)) orchestrates all 4 agents in sequence:
 
 **Architecture**:
 ```

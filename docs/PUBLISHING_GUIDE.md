@@ -9,7 +9,7 @@ This guide walks you through publishing your ComplianceBot agents and flow to th
 ## Prerequisites
 
 ✅ **Completed Before Starting:**
-- All 4 agents created (`.gitlab/duo/*.yaml`)
+- All 4 agents created (`agents/*.yml`)
 - Flow orchestration created (`.gitlab/flows/compliance-flow.yaml`)
 - Repository pushed to GitLab AI Hackathon group
 - GitLab PAT token with `api`, `read_api`, `write_repository` scopes
@@ -107,16 +107,16 @@ description: "Clear description of what the agent does"
 public: true  # Required for AI Catalog publication
 system_prompt: |
   Detailed system instructions for agent behavior
-tools:
+tools:  # Only official GitLab tools (see docs/OFFICIAL_TOOLS_REFERENCE.md)
   - tool1
   - tool2
 ```
 
-✅ **All your agents already use this format!** Check:
-- `compliance-scanner.yaml` — Uses correct format with `public: true`
-- `compliance-mapper.yaml` — Uses correct format with `public: true`
-- `evidence-collector.yaml` — Uses correct format with `public: true`
-- `compliance-reporter.yaml` — Uses correct format with `public: true`
+✅ **All your agents use official GitLab tools!** Check:
+- `agents/compliance-scanner.yml` — Uses `read_file`, `read_files`
+- `agents/compliance-mapper.yml` — Uses 6 official tools
+- `agents/evidence-collector.yml` — Uses 6 official tools
+- `agents/compliance-reporter.yml` — Uses 5 official tools
 
 Flow must also follow the format:
 
@@ -127,13 +127,14 @@ public: true
 definition:
   version: v1
   environment: ambient
-  triggers: [...]
   components: [...]
-  outputs: [...]
+  prompts: [...]
+  routers: [...]
+  flow: [...]
 ```
 
-✅ **Your flow already uses this format!** Check:
-- `compliance-flow.yaml` — Uses correct definition format with `public: true`
+✅ **Your flow uses correct format!** Check:
+- `flows/compliance-flow.yml` — Uses correct definition format with all required fields
 
 ---
 
@@ -151,19 +152,19 @@ definition:
 ### 3.2 Verify Agent Configuration Files
 ```bash
 # Check that all agent files exist and have correct format
-ls -la .gitlab/duo/
+ls -la agents/
 
 # Should show:
-# - compliance-scanner.yaml
-# - compliance-mapper.yaml
-# - evidence-collector.yaml
-# - compliance-reporter.yaml
+# - compliance-scanner.yml
+# - compliance-mapper.yml
+# - evidence-collector.yml
+# - compliance-reporter.yml
 
 # Check flow file exists
-ls -la .gitlab/flows/
+ls -la flows/
 
 # Should show:
-# - compliance-flow.yaml
+# - compliance-flow.yml
 ```
 
 ---
@@ -326,7 +327,7 @@ Show in demo:
 ### Issue: Agent Not Appearing in AI Catalog
 ```
 Solution:
-1. Ensure agent file in .gitlab/duo/YOUR-AGENT.yaml
+1. Ensure agent file in `agents/YOUR-AGENT.yml`
 2. Verify YAML syntax is correct (use online validator)
 3. Check project is PUBLIC (not private)
 4. Check Duo Agent Platform is enabled

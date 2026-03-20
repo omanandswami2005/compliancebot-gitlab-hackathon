@@ -34,4 +34,3 @@ tools:
   - create_issue_note
   - get_issue
   - list_issues
-  - upload_artifact

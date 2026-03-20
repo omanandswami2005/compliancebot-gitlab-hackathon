@@ -7,21 +7,6 @@ definition:
   version: v1
   environment: ambient
 
-  triggers:
-    - type: merge_request
-      events:
-        - opened
-        - updated
-    - type: pipeline
-      events:
-        - success
-        - failed
-      branches:
-        - main
-        - production
-    - type: schedule
-      cron: "0 2 * * 1"
-
   components:
     - name: scanner
       type: AgentComponent

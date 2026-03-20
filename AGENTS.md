@@ -4,6 +4,8 @@
 This project uses ComplianceBot Flow to automatically analyze merge requests
 and CI/CD pipelines for compliance with SOC 2, ISO 27001, PCI-DSS, and HIPAA.
 
+All agents **only use official GitLab tools** listed in the [Official Tools Reference](docs/OFFICIAL_TOOLS_REFERENCE.md).
+
 ## Architecture
 ComplianceBot integrates with:
 - **GitLab AI Catalog** — Agent publishing and flow management per official schema
@@ -21,17 +23,18 @@ description: "What this agent does" # Required: max 1024 characters
 public: true                        # Optional: boolean (default true)
 system_prompt: |                    # Required
   Detailed system instructions for agent behavior
-tools:                              # Optional
+tools:                              # Optional (only official GitLab tools)
   - tool1
   - tool2
 ```
 
 ## Agent Behavior Guidelines
 
-### ComplianceBot Scanner (`agents/compliance-scanner.yaml`)
+### ComplianceBot Scanner (`agents/compliance-scanner.yml`)
 - **Purpose**: Analyze MRs and pipelines for compliance signals
 - **Input**: Merge request diffs, pipeline results, vulnerability reports
 - **Output**: JSON findings with severity, control IDs, remediation steps
+- **Official Tools**: `read_file`, `read_files`
 - **Behavior**:
   - Always include file paths in findings
   - Map every finding to at least one control ID (SOC2-CC6.1, ISO27001-A.8.2.3, etc.)
@@ -39,10 +42,11 @@ tools:                              # Optional
   - Treat dependency lock file changes as informational only unless CVEs are detected
   - Detect: Auth changes, encryption configs, dependency vulnerabilities, SAST findings
 
-### ComplianceBot Mapper (`agents/compliance-mapper.yaml`)
+### ComplianceBot Mapper (`agents/compliance-mapper.yml`)
 - **Purpose**: Map findings to compliance framework controls
 - **Input**: Finding list, compliance frameworks
 - **Output**: Control mappings, risk assessment, compliance score (0-100)
+- **Official Tools**: `read_file`, `get_vulnerability_details`, `list_vulnerabilities`, `get_issue`, `get_repository_file`, `gitlab_blob_search`
 - **Behavior**:
   - Primary framework: SOC 2 (always include)
   - Secondary frameworks: ISO 27001 (always), PCI-DSS (if payment-related code detected), HIPAA (if health data detected)
@@ -50,10 +54,11 @@ tools:                              # Optional
   - Score 0-100 where 100 = fully audit-ready
   - Assess business risk and remediation priority
 
-### ComplianceBot Evidence Collector (`agents/evidence-collector.yaml`)
+### ComplianceBot Evidence Collector (`agents/evidence-collector.yml`)
 - **Purpose**: Gather audit trail evidence from GitLab activity
 - **Input**: Project context, mapped controls
 - **Output**: Evidence package with SHA-256 hashes, archived to BigQuery
+- **Official Tools**: `read_file`, `get_repository_file`, `list_project_audit_events`, `list_group_audit_events`, `gitlab_api_get`, `gitlab_graphql`
 - **Behavior**:
   - Evidence collection period: Last 14 days (default), 30 days for scheduled audits
   - Collect: MR metadata, pipeline results, access logs, code reviews
@@ -61,10 +66,11 @@ tools:                              # Optional
   - Maximum 500 MR records per collection run
   - Archive to BigQuery with 1-year SOC 2 retention policy
 
-### ComplianceBot Reporter (`agents/compliance-reporter.yaml`)
+### ComplianceBot Reporter (`agents/compliance-reporter.yml`)
 - **Purpose**: Generate audit-ready compliance reports
 - **Input**: Evidence package, control mappings
 - **Output**: Executive summary, PDF report, GitLab issues, MR comments
+- **Official Tools**: `read_file`, `create_issue`, `create_issue_note`, `get_issue`, `list_issues`
 - **Behavior**:
   - Tone: Professional, auditor-friendly
   - Executive summary: Max 3 sentences, always includes compliance score (0-100)
