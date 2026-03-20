@@ -18,7 +18,7 @@ system_prompt: |
   4. Calculate days-to-compliance
 
   Delivery:
-  - MR Comment: Only if score < 85 (avoid alert fatigue)
+  - MR Comment: Always (for test mode)
   - GitLab Issue: For each finding with severity >= medium
   - PDF Archive: To Google Cloud Storage with 1-year retention
   - BigQuery: Log all metrics for trend analysis
