@@ -1,0 +1,121 @@
+{
+  "schema_version": "1.0",
+  "agents": {
+    "agents/agent.yml": {
+      "catalog_id": "gid://gitlab/Ai::Catalog::Item/1005729",
+      "name": "Omii the Joke Teller",
+      "created_at": "2026-03-20T15:26:39.055Z",
+      "item_consumers": {
+        "group": {
+          "id": "gid://gitlab/Ai::Catalog::ItemConsumer/5572638"
+        },
+        "project": {
+          "id": "gid://gitlab/Ai::Catalog::ItemConsumer/5572639"
+        }
+      },
+      "latest_sync": {
+        "git_tag": "v0.0.6",
+        "catalog_version": "1.0.0",
+        "synced_at": "2026-03-20T15:26:39.055Z",
+        "definition_hash": "635f4437eef3cb45"
+      }
+    },
+    "agents/compliance-mapper.yml": {
+      "catalog_id": "gid://gitlab/Ai::Catalog::Item/1005730",
+      "name": "compliance-mapper",
+      "created_at": "2026-03-20T15:26:40.101Z",
+      "item_consumers": {
+        "group": {
+          "id": "gid://gitlab/Ai::Catalog::ItemConsumer/5572640"
+        },
+        "project": {
+          "id": "gid://gitlab/Ai::Catalog::ItemConsumer/5572641"
+        }
+      },
+      "latest_sync": {
+        "git_tag": "v0.0.6",
+        "catalog_version": "1.0.0",
+        "synced_at": "2026-03-20T15:26:40.101Z",
+        "definition_hash": "d5f14ee184b6e435"
+      }
+    },
+    "agents/compliance-reporter.yml": {
+      "catalog_id": "gid://gitlab/Ai::Catalog::Item/1005731",
+      "name": "compliance-reporter",
+      "created_at": "2026-03-20T15:26:41.016Z",
+      "item_consumers": {
+        "group": {
+          "id": "gid://gitlab/Ai::Catalog::ItemConsumer/5572642"
+        },
+        "project": {
+          "id": "gid://gitlab/Ai::Catalog::ItemConsumer/5572643"
+        }
+      },
+      "latest_sync": {
+        "git_tag": "v0.0.6",
+        "catalog_version": "1.0.0",
+        "synced_at": "2026-03-20T15:26:41.016Z",
+        "definition_hash": "e73ad20e1427fcc7"
+      }
+    },
+    "agents/compliance-scanner.yml": {
+      "catalog_id": "gid://gitlab/Ai::Catalog::Item/1005732",
+      "name": "compliance-scanner",
+      "created_at": "2026-03-20T15:26:42.142Z",
+      "item_consumers": {
+        "group": {
+          "id": "gid://gitlab/Ai::Catalog::ItemConsumer/5572644"
+        },
+        "project": {
+          "id": "gid://gitlab/Ai::Catalog::ItemConsumer/5572645"
+        }
+      },
+      "latest_sync": {
+        "git_tag": "v0.0.6",
+        "catalog_version": "1.0.0",
+        "synced_at": "2026-03-20T15:26:42.142Z",
+        "definition_hash": "e9b68678d76670b4"
+      }
+    },
+    "agents/evidence-collector.yml": {
+      "catalog_id": "gid://gitlab/Ai::Catalog::Item/1005733",
+      "name": "evidence-collector",
+      "created_at": "2026-03-20T15:26:43.016Z",
+      "item_consumers": {
+        "group": {
+          "id": "gid://gitlab/Ai::Catalog::ItemConsumer/5572646"
+        },
+        "project": {
+          "id": "gid://gitlab/Ai::Catalog::ItemConsumer/5572647"
+        }
+      },
+      "latest_sync": {
+        "git_tag": "v0.0.6",
+        "catalog_version": "1.0.0",
+        "synced_at": "2026-03-20T15:26:43.016Z",
+        "definition_hash": "15ab296596be868c"
+      }
+    }
+  },
+  "flows": {
+    "flows/compliance-flow.yml": {
+      "catalog_id": "gid://gitlab/Ai::Catalog::Item/1005734",
+      "name": "compliance-bot-flow",
+      "created_at": "2026-03-20T15:26:44.209Z",
+      "item_consumers": {
+        "group": {
+          "id": "gid://gitlab/Ai::Catalog::ItemConsumer/5572648"
+        },
+        "project": {
+          "id": "gid://gitlab/Ai::Catalog::ItemConsumer/5572649"
+        }
+      },
+      "latest_sync": {
+        "git_tag": "v0.0.6",
+        "catalog_version": "1.0.0",
+        "synced_at": "2026-03-20T15:26:44.209Z",
+        "definition_hash": "e31305447d64f375"
+      }
+    }
+  }
+}
