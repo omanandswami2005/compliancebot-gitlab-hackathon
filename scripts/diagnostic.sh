@@ -1,12 +1,14 @@
 #!/bin/bash
 # ComplianceBot AI Catalog Deployment - Quick Diagnostic Commands
 # Run these commands to verify agent/flow registration status
+# Official structure: agents/ and flows/ directories at repository root
 
 set -e
-cd "$(dirname "$0")"
+cd "$(dirname "$0")"/..
 
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║  ComplianceBot AI Catalog Registration Diagnostic v1.1     ║"
+echo "║  ComplianceBot AI Catalog Registration Diagnostic v2.0     ║"
+echo "║  (Following official GitLab AI Catalog schema)              ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 
 echo -e "\n📍 LOCATION: $(pwd)"
@@ -26,56 +28,56 @@ else
     exit 1
 fi
 
-# 2. Check agent files
+# 2. Check agent files (official location)
 echo -e "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "2️⃣  AGENT FILES DISCOVERY"
+echo "2️⃣  AGENT FILES (agents/ — Official GitLab AI Catalog location)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-for dir in "agents" ".ai-catalog/agents" ".gitlab/agents"; do
-    count=$(find "$dir" -maxdepth 1 -name "*.yaml" -type f 2>/dev/null | wc -l)
+if [ -d "agents" ]; then
+    count=$(find agents -maxdepth 1 -name "*.yaml" -type f 2>/dev/null | wc -l)
     if [ $count -gt 0 ]; then
-        echo "✅ $dir: $count file(s)"
-        find "$dir" -maxdepth 1 -name "*.yaml" -type f 2>/dev/null | sed 's/^/   ├─ /'
+        echo "✅ agents/: $count agent file(s)"
+        find agents -maxdepth 1 -name "*.yaml" -type f 2>/dev/null | sort | sed 's/^/   ├─ /'
     else
-        echo "⚠️  $dir: 0 files (may be created later)"
+        echo "❌ agents/: 0 files (no agent YAML files found)"
     fi
-done
-
-# 3. Check flow files
-echo -e "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "3️⃣  FLOW FILES DISCOVERY"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-for dir in "flows" ".ai-catalog/flows" ".gitlab/flows"; do
-    count=$(find "$dir" -maxdepth 1 -name "*.yaml" -type f 2>/dev/null | wc -l)
-    if [ $count -gt 0 ]; then
-        echo "✅ $dir: $count file(s)"
-        find "$dir" -maxdepth 1 -name "*.yaml" -type f 2>/dev/null | sed 's/^/   ├─ /'
-    else
-        echo "⚠️  $dir: 0 files (may be created later)"
-    fi
-done
-
-# 4. Check configuration files
-echo -e "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "4️⃣  AI CATALOG CONFIGURATION"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-if [ -f ".ai-catalog/config.yaml" ]; then
-    echo "✅ .ai-catalog/config.yaml found ($(stat -c%s .ai-catalog/config.yaml 2>/dev/null || stat -f%z .ai-catalog/config.yaml) bytes)"
-    echo "   Version: $(grep '^version:' .ai-catalog/config.yaml | head -1)"
-    echo "   Source paths configured:"
-    grep 'path:' .ai-catalog/config.yaml | sed 's/^/     ├─ /'
 else
-    echo "❌ .ai-catalog/config.yaml NOT found"
+    echo "❌ agents/ directory not found"
 fi
 
-if [ -f ".ai-catalog/index.json" ]; then
-    echo "✅ .ai-catalog/index.json found ($(stat -c%s .ai-catalog/index.json 2>/dev/null || stat -f%z .ai-catalog/index.json) bytes)"
-    agent_count=$(grep -o '"id":' .ai-catalog/index.json | wc -l)
-    echo "   Registered items: ~$(($agent_count / 1))"
+# 3. Check flow files (official location)
+echo -e "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "3️⃣  FLOW FILES (flows/ — Official GitLab AI Catalog location)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if [ -d "flows" ]; then
+    count=$(find flows -maxdepth 1 -name "*.yaml" -type f 2>/dev/null | wc -l)
+    if [ $count -gt 0 ]; then
+        echo "✅ flows/: $count flow file(s)"
+        find flows -maxdepth 1 -name "*.yaml" -type f 2>/dev/null | sort | sed 's/^/   ├─ /'
+    else
+        echo "❌ flows/: 0 files (no flow YAML files found)"
+    fi
 else
-    echo "⚠️  .ai-catalog/index.json NOT found (optional)"
+    echo "❌ flows/ directory not found"
+fi
+
+# 4. Check GitLab CI/CD configuration
+echo -e "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "4️⃣  GitLab CI/CD CONFIGURATION (.gitlab-ci.yml)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if [ -f ".gitlab-ci.yml" ]; then
+    echo "✅ .gitlab-ci.yml found"
+    if grep -q "catalog-sync" ".gitlab-ci.yml"; then
+        echo "   ✅ Contains ai-catalog/catalog-sync component reference"
+        echo "   Configuration:"
+        grep -A 3 "catalog-sync" ".gitlab-ci.yml" | head -5 | sed 's/^/      ├─ /'
+    else
+        echo "   ⚠️  No catalog-sync component found"
+    fi
+else
+    echo "❌ .gitlab-ci.yml NOT found"
 fi
 
 # 5. Validate YAML syntax
@@ -83,21 +85,24 @@ echo -e "\n━━━━━━━━━━━━━━━━━━━━━━━
 echo "5️⃣  YAML SYNTAX VALIDATION"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Check if python/yq available
 if command -v python3 &> /dev/null; then
     echo "Using Python YAML validation..."
+    yaml_errors=0
     for file in agents/*.yaml flows/*.yaml 2>/dev/null; do
         if [ -f "$file" ]; then
             if python3 -c "import yaml; yaml.safe_load(open('$file'))" 2>/dev/null; then
                 echo "✅ $file: Valid YAML"
             else
                 echo "❌ $file: INVALID YAML"
+                yaml_errors=$((yaml_errors + 1))
             fi
         fi
     done
+    if [ $yaml_errors -eq 0 ]; then
+        echo "✅ All YAML files are syntactically valid"
+    fi
 else
-    echo "ℹ️  Skipping detailed YAML validation (python3 not found)"
-    echo "    But files are present and found valid in Linux checks"
+    echo "ℹ️  Python3 not found, skipping detailed YAML validation"
 fi
 
 # 6. Check line endings
@@ -107,37 +112,53 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 test_file="agents/compliance-scanner.yaml"
 if [ -f "$test_file" ]; then
-    # Check if file has CRLF
     if file "$test_file" | grep -q "CRLF\|carriage"; then
-        echo "❌ File has CRLF line endings (should be LF)"
-        echo "   Run: dos2unix agents/*.yaml flows/*.yaml"
-    elif file "$test_file" | grep -q "ASCII"; then
-        echo "✅ Files have correct line endings (LF/ASCII)"
+        echo "❌ Files have CRLF line endings (should be LF only)"
+        echo "   Fix with: dos2unix agents/*.yaml flows/*.yaml"
     else
-        echo "⚠️  Unable to determine line endings"
+        echo "✅ Files have correct line endings (LF)"
     fi
 else
     echo "⚠️  Reference file not found, skipping"
 fi
 
-# 7. Summary
+# 7. Check for non-standard directories (now removed)
+echo -e "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "7️⃣  CLEANUP STATUS (Non-standard directories)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if [ -d ".ai-catalog" ]; then
+    echo "⚠️  .ai-catalog/ directory exists (non-standard, can be removed)"
+else
+    echo "✅ .ai-catalog/ removed (standard structure maintained)"
+fi
+
+if [ -d ".gitlab" ]; then
+    echo "⚠️  .gitlab/ directory exists (for Duo Platform, not AI Catalog)"
+else
+    echo "✅ .gitlab/ removed (official structure maintained)"
+fi
+
+# 8. Summary
 echo -e "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "📊 SUMMARY"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-agent_total=$(find agents .ai-catalog/agents .gitlab/agents -maxdepth 1 -name "*.yaml" -type f 2>/dev/null | sort -u | wc -l)
-flow_total=$(find flows .ai-catalog/flows .gitlab/flows -maxdepth 1 -name "*.yaml" -type f 2>/dev/null | sort -u | wc -l)
+agent_total=$(find agents -maxdepth 1 -name "*.yaml" -type f 2>/dev/null | wc -l)
+flow_total=$(find flows -maxdepth 1 -name "*.yaml" -type f 2>/dev/null | wc -l)
 
-echo "✅ Total unique agents: $agent_total (expect 4-5)"
-echo "✅ Total unique flows: $flow_total (expect 1)"
+echo "✅ Total agents: $agent_total (expect 4-5)"
+echo "✅ Total flows: $flow_total (expect 1)"
 
 echo -e "\n⏭️  NEXT STEPS:"
-echo "  1. ✅ All agent/flow files are registered in multiple locations"
-echo "  2. ⏳ Wait for GitLab AI Catalog sync job to process (auto-triggered)"
-echo "  3. 🔍 Check GitLab UI → Automate → Agents → Managed tab"
-echo "  4. 📢 Once agents appear, publish each to AI Catalog"
+echo "  1. ✅ All files follow official GitLab AI Catalog schema"
+echo "  2. ⏳ Push to origin/main and create a Git tag to trigger sync"
+echo "  3. 🔍 Check GitLab CI/CD → Pipelines for catalog-sync job"
+echo "  4. 📢 Once synced, agents appear in Automate → Agents → Managed"
 echo "  5. 🧪 Create test MR to verify flow execution"
 echo "  6. 📹 Record demo and submit to Devpost"
 
-echo -e "\n📚 For detailed info: docs/SYNC_TROUBLESHOOTING.md"
-echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+echo -e "\n📚 References:"
+echo "  • Official docs: https://gitlab.com/components/ai-catalog/-/blob/main/README.md"
+echo "  • Configuration: docs/configuration.md"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"

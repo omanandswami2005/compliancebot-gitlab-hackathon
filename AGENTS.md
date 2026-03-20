@@ -6,30 +6,29 @@ and CI/CD pipelines for compliance with SOC 2, ISO 27001, PCI-DSS, and HIPAA.
 
 ## Architecture
 ComplianceBot integrates with:
-- **GitLab Duo Agent Platform** — Agent orchestration and GitLab integration
+- **GitLab AI Catalog** — Agent publishing and flow management per official schema
 - **Google Cloud Vertex AI** — AI model for compliance narrative generation (Gemini-2.5-flash)
 - **Google Cloud BigQuery** — Evidence archival and compliance analytics
 - **Google Cloud Storage** — Long-term evidence retention with 1-year SOC 2 compliance
 
 ## Agent Structure & Format
 
-All agents are defined in `.gitlab/duo/` using GitLab's agent format:
+All agents are defined in `agents/` directory at repository root, following the official GitLab AI Catalog YAML schema:
 
 ```yaml
-name: ai_agent-name          # prefix with 'ai_' to make it identifiable
-display_name: "My Duo Agent"
-description: "What this agent does"
-visibility: public              # or private
-system_prompt: |
+name: agent-name                    # Required: 3-255 characters
+description: "What this agent does" # Required: max 1024 characters
+public: true                        # Optional: boolean (default true)
+system_prompt: |                    # Required
   Detailed system instructions for agent behavior
-tools:
+tools:                              # Optional
   - tool1
   - tool2
 ```
 
 ## Agent Behavior Guidelines
 
-### ComplianceBot Scanner (`.gitlab/duo/compliance-scanner.yaml`)
+### ComplianceBot Scanner (`agents/compliance-scanner.yaml`)
 - **Purpose**: Analyze MRs and pipelines for compliance signals
 - **Input**: Merge request diffs, pipeline results, vulnerability reports
 - **Output**: JSON findings with severity, control IDs, remediation steps
@@ -40,7 +39,7 @@ tools:
   - Treat dependency lock file changes as informational only unless CVEs are detected
   - Detect: Auth changes, encryption configs, dependency vulnerabilities, SAST findings
 
-### ComplianceBot Mapper (`.gitlab/duo/compliance-mapper.yaml`)
+### ComplianceBot Mapper (`agents/compliance-mapper.yaml`)
 - **Purpose**: Map findings to compliance framework controls
 - **Input**: Finding list, compliance frameworks
 - **Output**: Control mappings, risk assessment, compliance score (0-100)
@@ -51,7 +50,7 @@ tools:
   - Score 0-100 where 100 = fully audit-ready
   - Assess business risk and remediation priority
 
-### ComplianceBot Evidence Collector (`.gitlab/duo/evidence-collector.yaml`)
+### ComplianceBot Evidence Collector (`agents/evidence-collector.yaml`)
 - **Purpose**: Gather audit trail evidence from GitLab activity
 - **Input**: Project context, mapped controls
 - **Output**: Evidence package with SHA-256 hashes, archived to BigQuery
@@ -62,7 +61,7 @@ tools:
   - Maximum 500 MR records per collection run
   - Archive to BigQuery with 1-year SOC 2 retention policy
 
-### ComplianceBot Reporter (`.gitlab/duo/compliance-reporter.yaml`)
+### ComplianceBot Reporter (`agents/compliance-reporter.yaml`)
 - **Purpose**: Generate audit-ready compliance reports
 - **Input**: Evidence package, control mappings
 - **Output**: Executive summary, PDF report, GitLab issues, MR comments

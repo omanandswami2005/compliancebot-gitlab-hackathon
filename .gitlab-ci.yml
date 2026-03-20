@@ -15,9 +15,9 @@ variables:
 include:
   - component: $CI_SERVER_HOST/components/ai-catalog/catalog-sync@0.0.1
     inputs:
-      agent_directory: 'agents'       # Where agent YAML files are located
-      flow_directory: 'flows'         # Where flow YAML files are located  
-      enable_in_project: 'false'      # Don't require group_id (simpler setup)
+      agent_directory: "agents" # Where agent YAML files are located
+      flow_directory: "flows" # Where flow YAML files are located
+      enable_in_project: "false" # Don't require group_id (simpler setup)
 
 # ── Standard Pipeline ───────────────────────────────
 unit-tests:
