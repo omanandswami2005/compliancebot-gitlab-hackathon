@@ -1,6 +1,6 @@
 # ComplianceBot Flow
 # Official location: flows/compliance-flow.yaml (GitLab AI Catalog)
-name: compliance-bot-flow
+name: "compliance-bot-flow"
 description: "Multi-agent compliance automation flow that scans MRs, maps findings to controls, collects evidence, and generates audit-ready reports"
 public: true
 definition:
@@ -29,24 +29,12 @@ definition:
       inputs:
         - "context:merge_request_diff"
         - "context:pipeline_results"
-      toolset:
-        - read_file
-        - read_files
-        - analyze_file_diff
-      ui_log_events:
-        - on_agent_final_answer
 
     - name: mapper
       type: AgentComponent
       prompt_id: "compliance_mapper_prompt"
       inputs:
         - "from:scanner"
-      toolset:
-        - read_file
-        - execute_query
-        - log_analysis
-      ui_log_events:
-        - on_agent_final_answer
 
     - name: evidence_collector
       type: AgentComponent
@@ -54,27 +42,12 @@ definition:
       inputs:
         - "from:mapper"
         - "context:project"
-      toolset:
-        - read_file
-        - execute_query
-        - archive_data
-        - generate_hash
-      ui_log_events:
-        - on_agent_final_answer
 
     - name: reporter
       type: AgentComponent
       prompt_id: "compliance_reporter_prompt"
       inputs:
         - "from:evidence_collector"
-      toolset:
-        - read_file
-        - create_issue
-        - post_comment
-        - generate_pdf
-        - archive_file
-      ui_log_events:
-        - on_agent_final_answer
 
   prompts:
     - prompt_id: "compliance_scanner_prompt"
@@ -96,6 +69,7 @@ definition:
           Analyze the following merge request diff and pipeline results for compliance issues:
           {{context}}
         placeholder: history
+      unit_primitives: []
       params:
         timeout: 180
 
@@ -118,6 +92,7 @@ definition:
           Map the following security findings to compliance controls:
           {{context}}
         placeholder: history
+      unit_primitives: []
       params:
         timeout: 180
 
@@ -137,6 +112,7 @@ definition:
           Collect evidence from the following project context:
           {{context}}
         placeholder: history
+      unit_primitives: []
       params:
         timeout: 180
 
@@ -161,6 +137,7 @@ definition:
           Generate a compliance report from the following evidence:
           {{context}}
         placeholder: history
+      unit_primitives: []
       params:
         timeout: 180
 

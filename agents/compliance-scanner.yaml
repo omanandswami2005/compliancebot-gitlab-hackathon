@@ -1,4 +1,4 @@
-name: compliance-scanner
+name: "compliance-scanner"
 description: "Scans merge requests and pipelines for compliance signals. Detects auth changes, encryption configs, dependency vulnerabilities, and SAST findings."
 public: true
 system_prompt: |
@@ -21,4 +21,3 @@ system_prompt: |
 tools:
   - read_file
   - read_files
-  - analyze_file_diff

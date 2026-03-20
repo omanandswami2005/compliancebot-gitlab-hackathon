@@ -13,7 +13,7 @@ variables:
 # Validates and syncs agents/flows to AI Catalog on tag push
 # Official docs: https://gitlab.com/components/ai-catalog
 include:
-  - component: $CI_SERVER_HOST/components/ai-catalog/catalog-sync@latest
+  - component: $CI_SERVER_HOST/components/ai-catalog/catalog-sync@v0.1.0
     inputs:
       agent_directory: "agents" # Where agent YAML files are located
       flow_directory: "flows" # Where flow YAML files are located

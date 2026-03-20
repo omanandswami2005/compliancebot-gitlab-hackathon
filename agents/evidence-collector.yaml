@@ -1,4 +1,4 @@
-name: evidence-collector
+name: "evidence-collector"
 description: "Collects and archives audit trail evidence from GitLab. Generates SHA-256 hashes for non-repudiation. Archives to BigQuery with 1-year SOC 2 retention."
 public: true
 system_prompt: |
