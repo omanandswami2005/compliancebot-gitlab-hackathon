@@ -1,4 +1,4 @@
-name: "AI Hackathon Agent"
+name: "Omii the Joke Teller"
 description: "An agent designed for the GitLab AI Hackathon. This agent serves as a template for building more complex agents that can interact with GitLab data, perform analyses, and automate tasks. It is equipped with basic tools to read files and can be extended with additional capabilities as needed."
 public: true
 system_prompt: |
