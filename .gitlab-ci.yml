@@ -13,11 +13,29 @@ variables:
 # Validates and syncs agents/flows to AI Catalog on tag push
 # Official docs: https://gitlab.com/components/ai-catalog
 include:
-  - component: $CI_SERVER_HOST/components/ai-catalog/catalog-sync@0.0.1
+  - component: $CI_SERVER_HOST/components/ai-catalog/catalog-sync@latest
     inputs:
       agent_directory: "agents" # Where agent YAML files are located
       flow_directory: "flows" # Where flow YAML files are located
       enable_in_project: "false" # Don't require group_id (simpler setup)
+
+# ── Debug: Verify agent/flow files exist ───────────────────────────────
+debug-catalog-sources:
+  stage: .pre
+  image: alpine:latest
+  script:
+    - echo "📍 Checking agent_directory: agents"
+    - ls -la agents/ || echo "❌ agents/ NOT FOUND"
+    - find agents -type f -name "*.yaml" -exec sh -c 'echo "  ✅ {}" && head -3 {} && echo ""' \; || echo "❌ No YAML files in agents/"
+    - echo ""
+    - echo "📍 Checking flow_directory: flows"
+    - ls -la flows/ || echo "❌ flows/ NOT FOUND"
+    - find flows -type f -name "*.yaml" -exec sh -c 'echo "  ✅ {}" && head -3 {} && echo ""' \; || echo "❌ No YAML files in flows/"
+    - echo ""
+    - echo "📍 Git commit info"
+    - echo "  Commit: $(git rev-parse HEAD)"
+    - echo "  Branch: $(git rev-parse --abbrev-ref HEAD)"
+    - echo "  Tag: $(git describe --tags --always)"
 
 # ── Standard Pipeline ───────────────────────────────
 unit-tests:

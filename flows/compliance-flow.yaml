@@ -173,3 +173,6 @@ definition:
       to: reporter
     - from: reporter
       to: end
+
+  flow:
+    entry_point: scanner
