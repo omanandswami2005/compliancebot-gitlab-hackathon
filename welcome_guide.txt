@@ -1,0 +1,20 @@
+Hey @omanandswami2005 — you're in!Your project is set up and ready to go, so you can get cracking right away.Use this issue as your checklist + quick links.Checklist for a successful hackathon 
+
+Test your flow :Your flow will be given a user identity in the form @ai-flow-name-gitlab-ai-hackathon.You can trigger your flow in an issue or merge request in your project by:assigning the @ai- user.mentioning the @ai- handle in a commnet (along with any additional instructions).
+
+Iterate 🔄Keep refining your agent/flow until you are happy:
+Commit changes to the agent/flow yml.
+
+Create a new tag.Test the agent/flow.
+
+GitLab Duo Flows Documentation: https://docs.gitlab.com/user/duo_agent_platform/flows/
+
+Flow schema documentation: https://gitlab.com/gitlab-org/modelops/applied-ml/code-suggestions/ai-assist/-/blob/main/docs/flow_registry/v1.md
+
+
+Join our agent research study 📝Help shape the future of agent development.
+
+Join our research study - share your experience building AI agents through short weekly check-ins, and receive GitLab swag credits for your contribution.Take this 2-minute screener to see if you qualify.
+
+
+
