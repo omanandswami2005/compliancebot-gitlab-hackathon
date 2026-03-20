@@ -1,6 +1,6 @@
 # ComplianceBot Flow
 # Official location: flows/compliance-flow.yaml (GitLab AI Catalog)
-name: "ComplianceBot Flow"
+name: compliance-bot-flow
 description: "Multi-agent compliance automation flow that scans MRs, maps findings to controls, collects evidence, and generates audit-ready reports"
 public: true
 definition:

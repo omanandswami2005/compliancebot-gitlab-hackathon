@@ -1,4 +1,4 @@
-name: ai_compliance-scanner
+name: compliance-scanner
 description: "Scans merge requests and pipelines for compliance signals. Detects auth changes, encryption configs, dependency vulnerabilities, and SAST findings."
 public: true
 system_prompt: |

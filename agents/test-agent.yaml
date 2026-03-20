@@ -1,4 +1,4 @@
-name: "Test Agent"
+name: test-agent
 description: "Minimal test agent to verify AI Catalog sync"
 public: true
 system_prompt: |

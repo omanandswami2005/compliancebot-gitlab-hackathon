@@ -1,4 +1,4 @@
-name: ai_compliance-reporter
+name: compliance-reporter
 description: "Generates audit-ready compliance reports using AI. Uses Vertex AI (Gemini-2.5-flash) to create executive summaries. Posts MR comments and creates GitLab issues for findings."
 public: true
 system_prompt: |
