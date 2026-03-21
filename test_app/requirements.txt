@@ -1,0 +1,32 @@
+# Dependencies with known vulnerabilities
+# VIOLATION: Using outdated packages with CVEs (dependency_update - HIGH)
+
+# CVE-2021-33503 - ReDoS vulnerability
+urllib3==1.24.1
+
+# CVE-2022-42969 - Arbitrary code execution
+py==1.10.0
+
+# CVE-2021-23727 - Command injection
+celery==4.4.0
+
+# CVE-2020-13757 - Bleach XSS bypass
+bleach==3.1.0
+
+# CVE-2021-28363 - pip arbitrary code execution
+pip==19.0.0
+
+# CVE-2022-40897 - setuptools RCE
+setuptools==39.0.0
+
+# Insecure cryptography version
+cryptography==2.0.0
+
+# Vulnerable requests version
+requests==2.19.0
+
+# Old Django with multiple CVEs
+Django==2.0.0
+
+# Flask with known issues
+Flask==0.12.0
