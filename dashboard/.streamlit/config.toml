@@ -1,8 +1,3 @@
-[theme]
-primaryColor = "#667eea"
-base = "light"
-font = "sans serif"
-
 [server]
 headless = true
 enableCORS = false
@@ -12,5 +7,4 @@ enableXsrfProtection = true
 gatherUsageStats = false
 
 [client]
-showSidebarNavigation = true
 toolbarMode = "minimal"

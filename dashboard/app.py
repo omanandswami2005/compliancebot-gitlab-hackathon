@@ -1,19 +1,7 @@
 """
-ComplianceBot Dashboard - Beautiful UI for Hackathon Demo
-=========================================================
-A Streamlit dashboard showing compliance analytics, reports, and evidence.
-
-Run locally:
-    streamlit run dashboard/app.py
-
-Deploy to Streamlit Cloud:
-    1. Push to GitHub/GitLab
-    2. Go to share.streamlit.io
-    3. Connect repo and deploy
-
-Auto-switching between Demo and Live mode:
-    - If GCP_PROJECT_ID and credentials are set → Live BigQuery data
-    - Otherwise → Demo mode with mock data
+ComplianceBot Dashboard
+=======================
+Run:  streamlit run dashboard/app.py
 """
 
 import streamlit as st
@@ -23,384 +11,298 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import random
 
-# Import our data loader (handles demo/live switching automatically)
 from data_loader import get_data_loader
 
-# Page config
+# ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="ComplianceBot Dashboard",
     page_icon="🛡️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
-# Dark mode state (stored in session)
-if 'dark_mode' not in st.session_state:
-    st.session_state.dark_mode = False
+# ── Theme state ──────────────────────────────────────────────────────────────
+if "dark" not in st.session_state:
+    st.session_state.dark = True  # default to dark — looks better for demos
 
-def get_theme_css(dark_mode: bool) -> str:
-    """Generate CSS based on theme."""
-    if dark_mode:
-        return """
-        <style>
-            /* Dark Mode Theme */
-            :root {
-                --bg-primary: #0e1117;
-                --bg-secondary: #1a1f2e;
-                --bg-card: #1e2433;
-                --text-primary: #fafafa;
-                --text-secondary: #a0aec0;
-                --border-color: #2d3748;
-                --accent: #667eea;
-                --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            }
-            
-            /* Main container */
-            .main {
-                padding: 0rem 1rem;
-            }
-            
-            /* Header styling */
-            .dashboard-header {
-                background: var(--accent-gradient);
-                padding: 2rem;
-                border-radius: 15px;
-                color: white;
-                margin-bottom: 2rem;
-                box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
-            }
-            
-            .dashboard-header h1 {
-                margin: 0;
-                font-size: 2.5rem;
-                font-weight: 700;
-            }
-            
-            .dashboard-header p {
-                margin: 0.5rem 0 0 0;
-                opacity: 0.9;
-                font-size: 1.1rem;
-            }
-            
-            /* Section headers - Dark */
-            .section-header {
-                font-size: 1.5rem;
-                font-weight: 600;
-                color: #e2e8f0;
-                margin: 2rem 0 1rem 0;
-                padding-bottom: 0.5rem;
-                border-bottom: 2px solid #667eea;
-            }
-            
-            /* Report cards - Dark */
-            .report-card {
-                background: #1e2433;
-                padding: 1.2rem;
-                border-radius: 10px;
-                box-shadow: 0 2px 15px rgba(0,0,0,0.3);
-                margin-bottom: 1rem;
-                border: 1px solid #2d3748;
-                color: #e2e8f0;
-            }
-            
-            .report-card:hover {
-                box-shadow: 0 4px 25px rgba(102, 126, 234, 0.2);
-                border-color: #667eea;
-            }
-            
-            .report-card strong {
-                color: #fafafa;
-            }
-            
-            .report-card div {
-                color: #a0aec0;
-            }
-            
-            /* Status badges - Dark */
-            .badge {
-                display: inline-block;
-                padding: 0.25rem 0.75rem;
-                border-radius: 20px;
-                font-size: 0.8rem;
-                font-weight: 600;
-            }
-            
-            .badge-critical { background: #742a2a; color: #feb2b2; }
-            .badge-high { background: #744210; color: #fbd38d; }
-            .badge-medium { background: #2a4365; color: #90cdf4; }
-            .badge-low { background: #22543d; color: #9ae6b4; }
-            .badge-pass { background: #22543d; color: #9ae6b4; }
-            .badge-fail { background: #742a2a; color: #feb2b2; }
-            
-            /* Hide Streamlit branding */
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            
-            /* Data source indicator - Dark */
-            .data-source-live {
-                background: #22543d;
-                color: #9ae6b4;
-                padding: 0.5rem 1rem;
-                border-radius: 8px;
-                font-weight: 600;
-                text-align: center;
-            }
-            
-            .data-source-demo {
-                background: #744210;
-                color: #fbd38d;
-                padding: 0.5rem 1rem;
-                border-radius: 8px;
-                font-weight: 600;
-                text-align: center;
-            }
-            
-            /* Theme toggle button */
-            .theme-toggle {
-                background: #2d3748;
-                color: #fafafa;
-                border: 1px solid #4a5568;
-                padding: 0.5rem 1rem;
-                border-radius: 8px;
-                cursor: pointer;
-                width: 100%;
-                text-align: center;
-                font-weight: 600;
-                transition: all 0.2s;
-            }
-            
-            .theme-toggle:hover {
-                background: #4a5568;
-                border-color: #667eea;
-            }
-        </style>
-        """
-    else:
-        return """
-        <style>
-            /* Light Mode Theme */
-            :root {
-                --bg-primary: #ffffff;
-                --bg-secondary: #f8f9fa;
-                --bg-card: #ffffff;
-                --text-primary: #2c3e50;
-                --text-secondary: #666666;
-                --border-color: #eee;
-                --accent: #667eea;
-                --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            }
-            
-            /* Main container */
-            .main {
-                padding: 0rem 1rem;
-            }
-            
-            /* Header styling */
-            .dashboard-header {
-                background: var(--accent-gradient);
-                padding: 2rem;
-                border-radius: 15px;
-                color: white;
-                margin-bottom: 2rem;
-                box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
-            }
-            
-            .dashboard-header h1 {
-                margin: 0;
-                font-size: 2.5rem;
-                font-weight: 700;
-            }
-            
-            .dashboard-header p {
-                margin: 0.5rem 0 0 0;
-                opacity: 0.9;
-                font-size: 1.1rem;
-            }
-            
-            /* Section headers - Light */
-            .section-header {
-                font-size: 1.5rem;
-                font-weight: 600;
-                color: #2c3e50;
-                margin: 2rem 0 1rem 0;
-                padding-bottom: 0.5rem;
-                border-bottom: 2px solid #667eea;
-            }
-            
-            /* Report cards - Light */
-            .report-card {
-                background: white;
-                padding: 1.2rem;
-                border-radius: 10px;
-                box-shadow: 0 2px 15px rgba(0,0,0,0.06);
-                margin-bottom: 1rem;
-                border: 1px solid #eee;
-            }
-            
-            .report-card:hover {
-                box-shadow: 0 4px 25px rgba(0,0,0,0.1);
-            }
-            
-            /* Status badges - Light */
-            .badge {
-                display: inline-block;
-                padding: 0.25rem 0.75rem;
-                border-radius: 20px;
-                font-size: 0.8rem;
-                font-weight: 600;
-            }
-            
-            .badge-critical { background: #ffebee; color: #c62828; }
-            .badge-high { background: #fff3e0; color: #ef6c00; }
-            .badge-medium { background: #e3f2fd; color: #1565c0; }
-            .badge-low { background: #e8f5e9; color: #2e7d32; }
-            .badge-pass { background: #e8f5e9; color: #2e7d32; }
-            .badge-fail { background: #ffebee; color: #c62828; }
-            
-            /* Hide Streamlit branding */
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            
-            /* Data source indicator - Light */
-            .data-source-live {
-                background: #e8f5e9;
-                color: #2e7d32;
-                padding: 0.5rem 1rem;
-                border-radius: 8px;
-                font-weight: 600;
-                text-align: center;
-            }
-            
-            .data-source-demo {
-                background: #fff3e0;
-                color: #ef6c00;
-                padding: 0.5rem 1rem;
-                border-radius: 8px;
-                font-weight: 600;
-                text-align: center;
-            }
-            
-            /* Theme toggle button */
-            .theme-toggle {
-                background: #f8f9fa;
-                color: #2c3e50;
-                border: 1px solid #dee2e6;
-                padding: 0.5rem 1rem;
-                border-radius: 8px;
-                cursor: pointer;
-                width: 100%;
-                text-align: center;
-                font-weight: 600;
-                transition: all 0.2s;
-            }
-            
-            .theme-toggle:hover {
-                background: #e9ecef;
-                border-color: #667eea;
-            }
-        </style>
-        """
+IS_DARK = st.session_state.dark
 
-# Apply theme CSS
-st.markdown(get_theme_css(st.session_state.dark_mode), unsafe_allow_html=True)
+# ── Theme tokens ─────────────────────────────────────────────────────────────
+T = {
+    True: dict(  # dark
+        bg="#0e1117", bg2="#161b22", card="#1c2333", card_hover="#222d42",
+        border="#30363d", text="#e6edf3", text2="#8b949e", text3="#484f58",
+        accent="#667eea", accent2="#764ba2",
+        crit_bg="#3d1114", crit_fg="#ff8a8a",
+        high_bg="#3d2e05", high_fg="#ffcf70",
+        med_bg="#0d2847", med_fg="#79c0ff",
+        low_bg="#0d3321", low_fg="#7ee787",
+        pass_bg="#0d3321", pass_fg="#7ee787",
+        fail_bg="#3d1114", fail_fg="#ff8a8a",
+        chart="plotly_dark",
+        fill_alpha="0.15",
+        link="#79c0ff",
+    ),
+    False: dict(  # light
+        bg="#ffffff", bg2="#f6f8fa", card="#ffffff", card_hover="#f6f8fa",
+        border="#d0d7de", text="#1f2328", text2="#656d76", text3="#8b949e",
+        accent="#667eea", accent2="#764ba2",
+        crit_bg="#ffebe9", crit_fg="#cf222e",
+        high_bg="#fff8c5", high_fg="#9a6700",
+        med_bg="#ddf4ff", med_fg="#0969da",
+        low_bg="#dafbe1", low_fg="#1a7f37",
+        pass_bg="#dafbe1", pass_fg="#1a7f37",
+        fail_bg="#ffebe9", fail_fg="#cf222e",
+        chart="plotly_white",
+        fill_alpha="0.08",
+        link="#0969da",
+    ),
+}[IS_DARK]
 
+# ── Inject full-page CSS ────────────────────────────────────────────────────
+st.markdown(f"""
+<style>
+/* ── Streamlit root overrides ─────────────────────────────────── */
+:root {{
+    color-scheme: {"dark" if IS_DARK else "light"};
+}}
+/* main area */
+.stApp, [data-testid="stAppViewContainer"],
+[data-testid="stAppViewBlockContainer"] {{
+    background-color: {T["bg"]} !important;
+    color: {T["text"]} !important;
+}}
+/* sidebar */
+[data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child {{
+    background-color: {T["bg2"]} !important;
+    color: {T["text"]} !important;
+}}
+[data-testid="stSidebar"] * {{
+    color: {T["text"]} !important;
+}}
+/* metric widgets */
+[data-testid="stMetric"] {{
+    background: {T["card"]};
+    border: 1px solid {T["border"]};
+    border-radius: 12px;
+    padding: 1rem;
+}}
+[data-testid="stMetricLabel"] p {{
+    color: {T["text2"]} !important;
+}}
+[data-testid="stMetricValue"] {{
+    color: {T["text"]} !important;
+}}
+[data-testid="stMetricDelta"] {{
+    font-size: 0.85rem;
+}}
+/* selectbox / multiselect */
+[data-testid="stSelectbox"] label,
+[data-testid="stMultiSelect"] label {{
+    color: {T["text"]} !important;
+}}
+div[data-baseweb="select"] {{
+    background: {T["card"]} !important;
+    border-color: {T["border"]} !important;
+}}
+div[data-baseweb="select"] * {{
+    color: {T["text"]} !important;
+}}
+/* dataframe */
+[data-testid="stDataFrame"] {{
+    border: 1px solid {T["border"]};
+    border-radius: 10px;
+    overflow: hidden;
+}}
+/* buttons */
+.stButton > button {{
+    border-color: {T["border"]} !important;
+    color: {T["text"]} !important;
+}}
+.stButton > button[kind="primary"] {{
+    background: {T["accent"]} !important;
+    color: #fff !important;
+    border-color: {T["accent"]} !important;
+}}
+.stDownloadButton > button {{
+    background: {T["card"]} !important;
+    border-color: {T["border"]} !important;
+    color: {T["text"]} !important;
+}}
+/* info boxes */
+.stAlert {{
+    background: {T["card"]} !important;
+    border-color: {T["border"]} !important;
+    color: {T["text"]} !important;
+}}
+/* tabs */
+.stTabs [data-baseweb="tab-list"] {{
+    background: {T["bg2"]};
+    border-radius: 8px;
+}}
+.stTabs [data-baseweb="tab"] {{
+    color: {T["text2"]} !important;
+}}
+.stTabs [aria-selected="true"] {{
+    color: {T["accent"]} !important;
+}}
+/* dividers */
+hr {{
+    border-color: {T["border"]} !important;
+}}
+/* captions */
+.stCaption, [data-testid="stCaptionContainer"] {{
+    color: {T["text3"]} !important;
+}}
+/* markdown text */
+.stMarkdown, .stMarkdown p, .stMarkdown li {{
+    color: {T["text"]} !important;
+}}
+.stMarkdown a {{
+    color: {T["link"]} !important;
+}}
+/* hide branding */
+#MainMenu {{visibility: hidden;}}
+footer {{visibility: hidden;}}
 
-# =============================================================================
-# INITIALIZE DATA LOADER (Auto-switches between demo and live)
-# =============================================================================
+/* ── Custom components ────────────────────────────────────────── */
+.dashboard-header {{
+    background: linear-gradient(135deg, {T["accent"]} 0%, {T["accent2"]} 100%);
+    padding: 2rem 2.5rem;
+    border-radius: 16px;
+    color: #fff;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 32px rgba(102,126,234,0.25);
+}}
+.dashboard-header h1 {{ margin:0; font-size:2.4rem; font-weight:700; }}
+.dashboard-header p  {{ margin:0.4rem 0 0; opacity:0.9; font-size:1.05rem; }}
 
+.section-header {{
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: {T["text"]};
+    margin: 2rem 0 0.8rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid {T["accent"]};
+}}
+
+.report-card {{
+    background: {T["card"]};
+    padding: 1.2rem;
+    border-radius: 10px;
+    border: 1px solid {T["border"]};
+    margin-bottom: 0.8rem;
+    transition: all 0.2s;
+}}
+.report-card:hover {{
+    background: {T["card_hover"]};
+    border-color: {T["accent"]};
+    box-shadow: 0 4px 20px rgba(102,126,234,0.15);
+}}
+.report-card .rc-title {{ color: {T["text"]}; font-weight: 600; }}
+.report-card .rc-meta  {{ color: {T["text2"]}; font-size: 0.9rem; margin: 0.4rem 0; }}
+.report-card .rc-stats {{ color: {T["text"]}; }}
+.report-card .rc-date  {{ color: {T["text3"]}; font-size: 0.82rem; margin-top: 0.4rem; }}
+
+.badge {{
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.4;
+}}
+.badge-critical {{ background:{T["crit_bg"]}; color:{T["crit_fg"]}; }}
+.badge-high     {{ background:{T["high_bg"]}; color:{T["high_fg"]}; }}
+.badge-medium   {{ background:{T["med_bg"]};  color:{T["med_fg"]};  }}
+.badge-low      {{ background:{T["low_bg"]};  color:{T["low_fg"]};  }}
+.badge-pass     {{ background:{T["pass_bg"]}; color:{T["pass_fg"]}; }}
+.badge-fail     {{ background:{T["fail_bg"]}; color:{T["fail_fg"]}; }}
+
+.data-badge {{
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    font-size: 0.9rem;
+}}
+.data-badge.live {{ background:{T["pass_bg"]}; color:{T["pass_fg"]}; }}
+.data-badge.demo {{ background:{T["high_bg"]}; color:{T["high_fg"]}; }}
+
+.footer-text {{
+    text-align: center;
+    color: {T["text3"]};
+    padding: 1.5rem 0;
+    font-size: 0.88rem;
+}}
+.footer-text a {{ color: {T["link"]}; text-decoration: none; }}
+.footer-text a:hover {{ text-decoration: underline; }}
+</style>
+""", unsafe_allow_html=True)
+
+# ── Data loader ──────────────────────────────────────────────────────────────
 @st.cache_resource
-def init_data_loader():
-    """Initialize the data loader (cached)."""
+def init_loader():
     return get_data_loader()
 
-data_loader = init_data_loader()
+data_loader = init_loader()
 
-
-# =============================================================================
-# SIDEBAR
-# =============================================================================
-
+# ── Sidebar ──────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.image("https://about.gitlab.com/images/press/logo/png/gitlab-logo-500.png", width=150)
+    st.image("https://about.gitlab.com/images/press/logo/png/gitlab-logo-500.png", width=140)
     st.markdown("### 🛡️ ComplianceBot")
     st.markdown("---")
-    
-    # Theme Toggle
-    st.markdown("#### 🎨 Theme")
-    theme_col1, theme_col2 = st.columns(2)
-    with theme_col1:
-        if st.button("☀️ Light", use_container_width=True, type="secondary" if st.session_state.dark_mode else "primary"):
-            st.session_state.dark_mode = False
+
+    # Theme toggle
+    st.markdown("**🎨 Theme**")
+    tc1, tc2 = st.columns(2)
+    with tc1:
+        if st.button("☀️ Light", use_container_width=True,
+                      type="secondary" if IS_DARK else "primary"):
+            st.session_state.dark = False
             st.rerun()
-    with theme_col2:
-        if st.button("🌙 Dark", use_container_width=True, type="primary" if st.session_state.dark_mode else "secondary"):
-            st.session_state.dark_mode = True
+    with tc2:
+        if st.button("🌙 Dark", use_container_width=True,
+                      type="primary" if IS_DARK else "secondary"):
+            st.session_state.dark = True
             st.rerun()
-    
+
     st.markdown("---")
-    
-    # Data Source Status (Auto-detected!)
-    st.markdown("#### 📡 Data Source")
+
+    # Data source
+    st.markdown("**📡 Data Source**")
     if data_loader.is_live:
-        st.markdown("""
-        <div class="data-source-live">
-            ✅ LIVE - BigQuery Connected
-        </div>
-        """, unsafe_allow_html=True)
-        st.caption("Real-time data from GCP")
+        st.markdown('<div class="data-badge live">✅ LIVE &mdash; BigQuery</div>',
+                     unsafe_allow_html=True)
     else:
-        st.markdown("""
-        <div class="data-source-demo">
-            🎭 DEMO MODE
-        </div>
-        """, unsafe_allow_html=True)
-        st.caption("Using mock data for demo")
+        st.markdown('<div class="data-badge demo">🎭 DEMO MODE</div>',
+                     unsafe_allow_html=True)
         st.caption("Set GCP_PROJECT_ID for live data")
-    
+
     st.markdown("---")
-    
+
     # Filters
-    st.markdown("#### 🔍 Filters")
-    
-    # Get projects dynamically (from BigQuery in live mode, mock in demo)
+    st.markdown("**🔍 Filters**")
     available_projects = data_loader.get_projects()
-    
-    selected_projects = st.multiselect(
-        "Projects",
-        available_projects,
-        default=available_projects
-    )
-    
-    selected_frameworks = st.multiselect(
-        "Frameworks",
-        ['SOC 2', 'ISO 27001', 'PCI-DSS', 'HIPAA'],
-        default=['SOC 2', 'ISO 27001', 'PCI-DSS', 'HIPAA']
-    )
-    
-    date_range = st.selectbox(
-        "Time Range",
-        ['Last 7 days', 'Last 30 days', 'Last 90 days', 'All time'],
-        index=2
-    )
-    
-    severity_filter = st.multiselect(
-        "Severity",
-        ['critical', 'high', 'medium', 'low'],
-        default=['critical', 'high', 'medium', 'low']
-    )
-    
+    selected_projects = st.multiselect("Projects", available_projects,
+                                        default=available_projects)
+    selected_frameworks = st.multiselect("Frameworks",
+                                          ['SOC 2', 'ISO 27001', 'PCI-DSS', 'HIPAA'],
+                                          default=['SOC 2', 'ISO 27001', 'PCI-DSS', 'HIPAA'])
+    date_range = st.selectbox("Time Range",
+                               ['Last 7 days', 'Last 30 days', 'Last 90 days', 'All time'],
+                               index=2)
+    severity_filter = st.multiselect("Severity",
+                                      ['critical', 'high', 'medium', 'low'],
+                                      default=['critical', 'high', 'medium', 'low'])
+
     st.markdown("---")
-    st.markdown("#### 📚 Resources")
-    st.markdown("[📖 Documentation](https://gitlab.com/gitlab-ai-hackathon/participants/35481656)")
-    st.markdown("[🐛 Report Issue](https://gitlab.com/gitlab-ai-hackathon/participants/35481656/-/issues)")
-    st.markdown("[🏆 Hackathon](https://gitlab.devpost.com)")
+    st.markdown("**📚 Links**")
+    st.markdown("[📖 Docs](https://gitlab.com/gitlab-ai-hackathon/participants/35481656) · "
+                "[🐛 Issues](https://gitlab.com/gitlab-ai-hackathon/participants/35481656/-/issues) · "
+                "[🏆 Hackathon](https://gitlab.devpost.com)")
 
-
-# =============================================================================
-# HEADER
-# =============================================================================
-
+# ── Header ───────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="dashboard-header">
     <h1>🛡️ ComplianceBot Dashboard</h1>
@@ -408,24 +310,13 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-
-# =============================================================================
-# LOAD DATA (Automatically uses BigQuery or mock data)
-# =============================================================================
-
-# Determine days based on filter
-days_map = {
-    'Last 7 days': 7,
-    'Last 30 days': 30,
-    'Last 90 days': 90,
-    'All time': 365
-}
+# ── Load & filter data ───────────────────────────────────────────────────────
+days_map = {'Last 7 days': 7, 'Last 30 days': 30, 'Last 90 days': 90, 'All time': 365}
 days = days_map.get(date_range, 90)
 
-# Load data using the data loader (auto-switches between demo/live)
 @st.cache_data(ttl=300)
-def load_findings(_loader, days):
-    return _loader.get_findings(days)
+def load_findings(_loader, d):
+    return _loader.get_findings(d)
 
 @st.cache_data(ttl=300)
 def load_reports(_loader):
@@ -439,267 +330,193 @@ df = load_findings(data_loader, days)
 reports = load_reports(data_loader)
 evidence = load_evidence(data_loader)
 
-# Apply filters
-df_filtered = df[
+df_f = df[
     (df['project'].isin(selected_projects)) &
     (df['framework'].isin(selected_frameworks)) &
     (df['severity'].isin(severity_filter))
-]
+].copy()
 
-if date_range == 'Last 7 days':
-    df_filtered = df_filtered[df_filtered['date'] >= datetime.now() - timedelta(days=7)]
-elif date_range == 'Last 30 days':
-    df_filtered = df_filtered[df_filtered['date'] >= datetime.now() - timedelta(days=30)]
-elif date_range == 'Last 90 days':
-    df_filtered = df_filtered[df_filtered['date'] >= datetime.now() - timedelta(days=90)]
+cutoff = datetime.now() - timedelta(days=days)
+df_f = df_f[df_f['date'] >= cutoff]
 
+# ── Metrics ──────────────────────────────────────────────────────────────────
+m1, m2, m3, m4, m5 = st.columns(5)
+n = len(df_f)
+with m1:
+    st.metric("📊 Avg Score",
+              f"{df_f['compliance_score'].mean():.0f}/100" if n else "N/A",
+              f"+{random.randint(1,5)}%")
+with m2:
+    cc = len(df_f[df_f['severity'] == 'critical'])
+    st.metric("🔴 Critical", cc,
+              f"-{random.randint(1,3)}" if cc else "0", delta_color="inverse")
+with m3:
+    hc = len(df_f[df_f['severity'] == 'high'])
+    st.metric("🟠 High", hc,
+              f"-{random.randint(1,5)}" if hc else "0", delta_color="inverse")
+with m4:
+    st.metric("🔍 MRs Scanned",
+              len(df_f['mr_id'].unique()) if n else 0,
+              f"+{random.randint(5,15)}")
+with m5:
+    st.metric("✅ Remediated",
+              len(df_f[df_f['status'] == 'remediated']) if n else 0,
+              f"+{random.randint(3,10)}")
 
-# =============================================================================
-# METRICS ROW
-# =============================================================================
-
-col1, col2, col3, col4, col5 = st.columns(5)
-
-with col1:
-    avg_score = df_filtered['compliance_score'].mean() if len(df_filtered) > 0 else 0
-    st.metric(
-        label="📊 Avg Compliance Score",
-        value=f"{avg_score:.0f}/100",
-        delta=f"+{random.randint(1, 5)}% vs last period"
-    )
-
-with col2:
-    critical_count = len(df_filtered[df_filtered['severity'] == 'critical'])
-    st.metric(
-        label="🔴 Critical Findings",
-        value=critical_count,
-        delta=f"-{random.randint(1, 3)}" if critical_count > 0 else "0",
-        delta_color="inverse"
-    )
-
-with col3:
-    high_count = len(df_filtered[df_filtered['severity'] == 'high'])
-    st.metric(
-        label="🟠 High Findings",
-        value=high_count,
-        delta=f"-{random.randint(1, 5)}" if high_count > 0 else "0",
-        delta_color="inverse"
-    )
-
-with col4:
-    total_scans = len(df_filtered['mr_id'].unique()) if len(df_filtered) > 0 else 0
-    st.metric(
-        label="🔍 MRs Scanned",
-        value=total_scans,
-        delta=f"+{random.randint(5, 15)}"
-    )
-
-with col5:
-    remediated = len(df_filtered[df_filtered['status'] == 'remediated']) if len(df_filtered) > 0 else 0
-    st.metric(
-        label="✅ Remediated",
-        value=remediated,
-        delta=f"+{random.randint(3, 10)}"
-    )
-
-
-# =============================================================================
-# CHARTS ROW
-# =============================================================================
-
+# ── Charts ───────────────────────────────────────────────────────────────────
 st.markdown('<div class="section-header">📈 Compliance Trends</div>', unsafe_allow_html=True)
 
-chart_col1, chart_col2 = st.columns(2)
+c1, c2 = st.columns(2)
 
-with chart_col1:
-    # Compliance Score Trend
-    if len(df_filtered) > 0:
-        daily_scores = df_filtered.groupby(df_filtered['date'].dt.date)['compliance_score'].mean().reset_index()
-        daily_scores.columns = ['date', 'score']
-        
-        # Use dark or light template based on theme
-        chart_template = 'plotly_dark' if st.session_state.dark_mode else 'plotly_white'
-        
-        fig_trend = px.line(
-            daily_scores,
-            x='date',
-            y='score',
-            title='Compliance Score Over Time',
-            labels={'date': 'Date', 'score': 'Average Score'},
-            template=chart_template
-        )
-        fig_trend.update_traces(
-            line=dict(color='#667eea', width=3),
-            fill='tozeroy',
-            fillcolor='rgba(102, 126, 234, 0.2)' if st.session_state.dark_mode else 'rgba(102, 126, 234, 0.1)'
-        )
-        fig_trend.add_hline(y=85, line_dash="dash", line_color="#48bb78", annotation_text="Pass Threshold (85)")
-        fig_trend.update_layout(height=350)
-        st.plotly_chart(fig_trend, use_container_width=True)
+with c1:
+    if n:
+        daily = df_f.groupby(df_f['date'].dt.date)['compliance_score'].mean().reset_index()
+        daily.columns = ['date', 'score']
+        fig = px.line(daily, x='date', y='score',
+                      title='Compliance Score Over Time',
+                      template=T["chart"])
+        fig.update_traces(line=dict(color=T["accent"], width=3),
+                          fill='tozeroy',
+                          fillcolor=f'rgba(102,126,234,{T["fill_alpha"]})')
+        fig.add_hline(y=85, line_dash="dash", line_color="#48bb78",
+                      annotation_text="Pass (85)")
+        fig.update_layout(height=360, margin=dict(t=40, b=20))
+        st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("No data available for the selected filters")
+        st.info("No data for selected filters")
 
-with chart_col2:
-    # Findings by Severity
-    if len(df_filtered) > 0:
-        severity_counts = df_filtered['severity'].value_counts().reset_index()
-        severity_counts.columns = ['severity', 'count']
-        
-        colors = {'critical': '#e74c3c', 'high': '#f39c12', 'medium': '#3498db', 'low': '#27ae60'}
-        chart_template = 'plotly_dark' if st.session_state.dark_mode else 'plotly_white'
-        
-        fig_severity = px.pie(
-            severity_counts,
-            values='count',
-            names='severity',
-            title='Findings by Severity',
-            color='severity',
-            color_discrete_map=colors,
-            hole=0.4,
-            template=chart_template
-        )
-        fig_severity.update_layout(height=350)
-        st.plotly_chart(fig_severity, use_container_width=True)
+with c2:
+    if n:
+        sev = df_f['severity'].value_counts().reset_index()
+        sev.columns = ['severity', 'count']
+        cmap = {'critical': '#e74c3c', 'high': '#f39c12',
+                'medium': '#3498db', 'low': '#27ae60'}
+        fig = px.pie(sev, values='count', names='severity',
+                     title='Findings by Severity',
+                     color='severity', color_discrete_map=cmap,
+                     hole=0.45, template=T["chart"])
+        fig.update_layout(height=360, margin=dict(t=40, b=20))
+        st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("No data available for the selected filters")
+        st.info("No data for selected filters")
 
+c3, c4 = st.columns(2)
 
-# Second row of charts
-chart_col3, chart_col4 = st.columns(2)
-
-with chart_col3:
-    # Findings by Framework
-    if len(df_filtered) > 0:
-        framework_counts = df_filtered['framework'].value_counts().reset_index()
-        framework_counts.columns = ['framework', 'count']
-        
-        chart_template = 'plotly_dark' if st.session_state.dark_mode else 'plotly_white'
-        
-        fig_framework = px.bar(
-            framework_counts,
-            x='framework',
-            y='count',
-            title='Findings by Framework',
-            color='framework',
-            color_discrete_sequence=px.colors.qualitative.Set2,
-            template=chart_template
-        )
-        fig_framework.update_layout(height=350, showlegend=False)
-        st.plotly_chart(fig_framework, use_container_width=True)
+with c3:
+    if n:
+        fw = df_f['framework'].value_counts().reset_index()
+        fw.columns = ['framework', 'count']
+        fig = px.bar(fw, x='framework', y='count',
+                     title='Findings by Framework',
+                     color='framework',
+                     color_discrete_sequence=px.colors.qualitative.Set2,
+                     template=T["chart"])
+        fig.update_layout(height=360, showlegend=False, margin=dict(t=40, b=20))
+        st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("No data available")
+        st.info("No data")
 
-with chart_col4:
-    # Findings by Project
-    if len(df_filtered) > 0:
-        project_counts = df_filtered.groupby('project').agg({
-            'compliance_score': 'mean',
-            'severity': 'count'
-        }).reset_index()
-        project_counts.columns = ['project', 'avg_score', 'findings']
-        
-        chart_template = 'plotly_dark' if st.session_state.dark_mode else 'plotly_white'
-        
-        fig_project = px.bar(
-            project_counts,
-            x='project',
-            y='avg_score',
-            title='Average Compliance Score by Project',
-            color='avg_score',
-            color_continuous_scale='RdYlGn',
-            template=chart_template
-        )
-        fig_project.add_hline(y=85, line_dash="dash", line_color="#48bb78")
-        fig_project.update_layout(height=350)
-        st.plotly_chart(fig_project, use_container_width=True)
+with c4:
+    if n:
+        proj = df_f.groupby('project').agg(
+            avg_score=('compliance_score', 'mean'),
+            findings=('severity', 'count')
+        ).reset_index()
+        fig = px.bar(proj, x='project', y='avg_score',
+                     title='Avg Score by Project',
+                     color='avg_score', color_continuous_scale='RdYlGn',
+                     template=T["chart"])
+        fig.add_hline(y=85, line_dash="dash", line_color="#48bb78")
+        fig.update_layout(height=360, margin=dict(t=40, b=20))
+        st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("No data available")
+        st.info("No data")
 
+# ── Heatmap: Severity × Framework ───────────────────────────────────────────
+st.markdown('<div class="section-header">🗺️ Risk Heatmap</div>', unsafe_allow_html=True)
 
-# =============================================================================
-# REPORTS SECTION
-# =============================================================================
+if n:
+    heat = df_f.groupby(['framework', 'severity']).size().reset_index(name='count')
+    heat_pivot = heat.pivot(index='framework', columns='severity', values='count').fillna(0)
+    # reorder columns
+    for s in ['critical', 'high', 'medium', 'low']:
+        if s not in heat_pivot.columns:
+            heat_pivot[s] = 0
+    heat_pivot = heat_pivot[['critical', 'high', 'medium', 'low']]
 
+    fig = px.imshow(
+        heat_pivot.values,
+        x=['Critical', 'High', 'Medium', 'Low'],
+        y=heat_pivot.index.tolist(),
+        color_continuous_scale='YlOrRd',
+        title='Findings: Framework × Severity',
+        template=T["chart"],
+        text_auto=True,
+    )
+    fig.update_layout(height=300, margin=dict(t=40, b=20))
+    st.plotly_chart(fig, use_container_width=True)
+
+# ── Reports ──────────────────────────────────────────────────────────────────
 st.markdown('<div class="section-header">📄 Compliance Reports</div>', unsafe_allow_html=True)
 
-# Filter reports - use projects from reports or available projects
-report_projects = list(set([r['project'] for r in reports])) if reports else available_projects
-report_project_filter = st.selectbox(
-    "Filter by Project",
-    ['All Projects'] + report_projects,
-    key='report_filter'
-)
+rp = list(set(r['project'] for r in reports)) if reports else available_projects
+rp_filter = st.selectbox("Filter by Project", ['All'] + rp, key='rp')
+f_reports = reports if rp_filter == 'All' else [r for r in reports if r['project'] == rp_filter]
 
-filtered_reports = reports if report_project_filter == 'All Projects' else [r for r in reports if r['project'] == report_project_filter]
-
-# Display reports in cards
-for i in range(0, len(filtered_reports), 3):
+for i in range(0, len(f_reports), 3):
     cols = st.columns(3)
     for j, col in enumerate(cols):
-        if i + j < len(filtered_reports):
-            report = filtered_reports[i + j]
-            with col:
-                status_class = 'badge-pass' if report['status'] == 'Pass' else 'badge-fail'
-                st.markdown(f"""
-                <div class="report-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <strong>{report['id']}</strong>
-                        <span class="badge {status_class}">{report['status']}</span>
-                    </div>
-                    <div style="color: #666; margin: 0.5rem 0;">
-                        📁 {report['project']} • MR !{report['mr_id']}
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
-                        <span>📊 Score: <strong>{report['score']}/100</strong></span>
-                        <span>🔍 {report['findings']} findings</span>
-                    </div>
-                    <div style="color: #888; font-size: 0.85rem; margin-top: 0.5rem;">
-                        📅 {report['date'].strftime('%Y-%m-%d %H:%M') if hasattr(report['date'], 'strftime') else report['date']} • {report['size']}
-                    </div>
-                    <div style="margin-top: 0.5rem;">
-                        {''.join([f'<span class="badge badge-medium" style="margin-right: 4px; font-size: 0.7rem;">{f}</span>' for f in report['frameworks'][:3]])}
-                    </div>
+        idx = i + j
+        if idx >= len(f_reports):
+            break
+        r = f_reports[idx]
+        with col:
+            sc = 'badge-pass' if r['status'] == 'Pass' else 'badge-fail'
+            date_str = r['date'].strftime('%Y-%m-%d %H:%M') if hasattr(r['date'], 'strftime') else str(r['date'])
+            fw_badges = ''.join(
+                f'<span class="badge badge-medium" style="margin-right:4px;font-size:0.72rem;">{f}</span>'
+                for f in r['frameworks'][:3]
+            )
+            st.markdown(f"""
+            <div class="report-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="rc-title">{r['id']}</span>
+                    <span class="badge {sc}">{r['status']}</span>
                 </div>
-                """, unsafe_allow_html=True)
-                
-                # Download button (works with real URLs when GCP is configured)
-                if report['url'] != '#':
-                    st.link_button("📥 Download PDF", report['url'], use_container_width=True)
-                else:
-                    st.download_button(
-                        "📥 Download PDF",
-                        data=b"Mock PDF content - Configure GCP for real reports",
-                        file_name=f"{report['id']}.pdf",
-                        mime="application/pdf",
-                        key=f"dl_{report['id']}",
-                        use_container_width=True
-                    )
+                <div class="rc-meta">📁 {r['project']} &bull; MR !{r['mr_id']}</div>
+                <div class="rc-stats" style="display:flex;justify-content:space-between;">
+                    <span>📊 <strong>{r['score']}/100</strong></span>
+                    <span>🔍 {r['findings']} findings</span>
+                </div>
+                <div class="rc-date">📅 {date_str} &bull; {r['size']}</div>
+                <div style="margin-top:0.5rem;">{fw_badges}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            if r['url'] != '#':
+                st.link_button("📥 Download PDF", r['url'], use_container_width=True)
+            else:
+                st.download_button("📥 Download PDF",
+                                   data=b"Mock PDF - configure GCP for real reports",
+                                   file_name=f"{r['id']}.pdf",
+                                   mime="application/pdf",
+                                   key=f"dl_{r['id']}",
+                                   use_container_width=True)
 
-
-# =============================================================================
-# EVIDENCE SECTION
-# =============================================================================
-
+# ── Evidence ─────────────────────────────────────────────────────────────────
 st.markdown('<div class="section-header">📦 Evidence Packages</div>', unsafe_allow_html=True)
 
-# Evidence type filter
-evidence_type_filter = st.selectbox(
-    "Filter by Type",
-    ['All Types', 'MR Approvals', 'Pipeline Logs', 'Access Audit', 'Security Scans'],
-    key='evidence_filter'
-)
+ev_filter = st.selectbox("Filter by Type",
+                          ['All Types', 'MR Approvals', 'Pipeline Logs',
+                           'Access Audit', 'Security Scans'],
+                          key='ev')
+f_ev = evidence if ev_filter == 'All Types' else [e for e in evidence if e['type'] == ev_filter]
 
-filtered_evidence = evidence if evidence_type_filter == 'All Types' else [e for e in evidence if e['type'] == evidence_type_filter]
-
-# Display evidence in a table
-if filtered_evidence:
-    evidence_df = pd.DataFrame(filtered_evidence)
-    evidence_df['date'] = pd.to_datetime(evidence_df['date']).dt.strftime('%Y-%m-%d %H:%M')
-    
+if f_ev:
+    ev_df = pd.DataFrame(f_ev)
+    ev_df['date'] = pd.to_datetime(ev_df['date']).dt.strftime('%Y-%m-%d %H:%M')
     st.dataframe(
-        evidence_df[['id', 'project', 'type', 'date', 'items', 'controls_covered', 'size', 'hash']],
-        use_container_width=True,
-        hide_index=True,
+        ev_df[['id', 'project', 'type', 'date', 'items', 'controls_covered', 'size', 'hash']],
+        use_container_width=True, hide_index=True,
         column_config={
             'id': st.column_config.TextColumn('ID', width='small'),
             'project': st.column_config.TextColumn('Project', width='medium'),
@@ -709,73 +526,48 @@ if filtered_evidence:
             'controls_covered': st.column_config.NumberColumn('Controls', width='small'),
             'size': st.column_config.TextColumn('Size', width='small'),
             'hash': st.column_config.TextColumn('Hash', width='medium'),
-        }
-    )
+        })
 else:
     st.info("No evidence packages found")
 
-
-# =============================================================================
-# RECENT FINDINGS TABLE
-# =============================================================================
-
+# ── Recent Findings ──────────────────────────────────────────────────────────
 st.markdown('<div class="section-header">🔍 Recent Findings</div>', unsafe_allow_html=True)
 
-if len(df_filtered) > 0:
-    # Show recent findings
-    recent_findings = df_filtered.sort_values('date', ascending=False).head(20).copy()
-    
-    def severity_badge(severity):
-        colors = {
-            'critical': '🔴',
-            'high': '🟠',
-            'medium': '🟡',
-            'low': '🟢'
-        }
-        return colors.get(severity, '⚪')
-    
-    recent_findings['severity_icon'] = recent_findings['severity'].apply(severity_badge)
-    recent_findings['date_str'] = recent_findings['date'].dt.strftime('%Y-%m-%d')
-    
+if n:
+    recent = df_f.sort_values('date', ascending=False).head(25).copy()
+    sev_icon = {'critical': '🔴', 'high': '🟠', 'medium': '🟡', 'low': '🟢'}
+    recent[''] = recent['severity'].map(sev_icon).fillna('⚪')
+    recent['date'] = recent['date'].dt.strftime('%Y-%m-%d')
     st.dataframe(
-        recent_findings[['date_str', 'project', 'severity_icon', 'severity', 'framework', 'control_id', 'title', 'status']],
-        use_container_width=True,
-        hide_index=True,
+        recent[['date', 'project', '', 'severity', 'framework', 'control_id', 'title', 'status']],
+        use_container_width=True, hide_index=True,
         column_config={
-            'date_str': st.column_config.TextColumn('Date', width='small'),
+            'date': st.column_config.TextColumn('Date', width='small'),
             'project': st.column_config.TextColumn('Project', width='medium'),
-            'severity_icon': st.column_config.TextColumn('', width='small'),
+            '': st.column_config.TextColumn('', width=40),
             'severity': st.column_config.TextColumn('Severity', width='small'),
             'framework': st.column_config.TextColumn('Framework', width='small'),
             'control_id': st.column_config.TextColumn('Control', width='small'),
             'title': st.column_config.TextColumn('Finding', width='large'),
             'status': st.column_config.TextColumn('Status', width='small'),
-        }
-    )
+        })
 else:
     st.info("No findings match the selected filters")
 
-
-# =============================================================================
-# FOOTER
-# =============================================================================
-
+# ── Footer ───────────────────────────────────────────────────────────────────
 st.markdown("---")
-
-# Show data source info
-if data_loader.is_live:
-    source_info = "🟢 Connected to BigQuery | Real-time data"
-else:
-    source_info = "🟡 Demo Mode | Set GCP_PROJECT_ID and GCP_SERVICE_ACCOUNT_KEY for live data"
-
+src = ("🟢 BigQuery Connected" if data_loader.is_live
+       else "🟡 Demo Mode &mdash; set GCP_PROJECT_ID for live data")
 st.markdown(f"""
-<div style="text-align: center; color: #888; padding: 1rem;">
-    <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">{source_info}</p>
-    <p>🛡️ <strong>ComplianceBot Dashboard</strong> | Built for GitLab AI Hackathon 2026</p>
-    <p>
-        <a href="https://gitlab.com/gitlab-ai-hackathon/participants/35481656" target="_blank">GitLab Repo</a> •
-        <a href="https://gitlab.devpost.com" target="_blank">Hackathon</a> •
-        <a href="https://gitlab.com/gitlab-ai-hackathon/participants/35481656/-/blob/main/docs/GCP_SETUP.md" target="_blank">GCP Setup Guide</a>
-    </p>
+<div class="footer-text">
+    <div>{src}</div>
+    <div style="margin-top:0.5rem;">
+        🛡️ <strong>ComplianceBot</strong> &bull; GitLab AI Hackathon 2026
+    </div>
+    <div style="margin-top:0.3rem;">
+        <a href="https://gitlab.com/gitlab-ai-hackathon/participants/35481656">Repo</a> &bull;
+        <a href="https://gitlab.devpost.com">Hackathon</a> &bull;
+        <a href="https://gitlab.com/gitlab-ai-hackathon/participants/35481656/-/blob/main/docs/GCP_SETUP.md">GCP Setup</a>
+    </div>
 </div>
 """, unsafe_allow_html=True)
