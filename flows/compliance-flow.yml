@@ -1,6 +1,8 @@
 # ComplianceBot Flow - GitLab Duo Agent Platform
 # Multi-agent compliance analysis flow for merge requests
 
+description: "Multi-agent compliance flow that analyzes merge requests for SOC 2, ISO 27001, PCI-DSS, and HIPAA compliance. Scans code changes, maps findings to controls, collects audit evidence, and generates compliance reports."
+
 definition:
   version: "v1"
   environment: ambient
