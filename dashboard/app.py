@@ -10,6 +10,10 @@ Deploy to Streamlit Cloud:
     1. Push to GitHub/GitLab
     2. Go to share.streamlit.io
     3. Connect repo and deploy
+
+Auto-switching between Demo and Live mode:
+    - If GCP_PROJECT_ID and credentials are set → Live BigQuery data
+    - Otherwise → Demo mode with mock data
 """
 
 import streamlit as st
@@ -18,7 +22,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import random
-import json
+
+# Import our data loader (handles demo/live switching automatically)
+from data_loader import get_data_loader
 
 # Page config
 st.set_page_config(
@@ -125,100 +131,39 @@ st.markdown("""
     .css-1d391kg {
         background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
     }
+    
+    /* Data source indicator */
+    .data-source-live {
+        background: #e8f5e9;
+        color: #2e7d32;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-align: center;
+    }
+    
+    .data-source-demo {
+        background: #fff3e0;
+        color: #ef6c00;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-align: center;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 
 # =============================================================================
-# MOCK DATA GENERATION (Replace with real BigQuery data when available)
+# INITIALIZE DATA LOADER (Auto-switches between demo and live)
 # =============================================================================
 
-@st.cache_data(ttl=300)
-def generate_mock_findings():
-    """Generate mock compliance findings data."""
-    frameworks = ['SOC 2', 'ISO 27001', 'PCI-DSS', 'HIPAA']
-    severities = ['critical', 'high', 'medium', 'low']
-    controls = {
-        'SOC 2': ['CC6.1', 'CC6.2', 'CC6.7', 'CC7.1', 'CC8.1'],
-        'ISO 27001': ['A.8.2', 'A.9.4', 'A.10.1', 'A.12.6'],
-        'PCI-DSS': ['6.3', '8.2', '10.2'],
-        'HIPAA': ['164.312(a)', '164.312(b)', '164.312(e)']
-    }
-    
-    data = []
-    base_date = datetime.now() - timedelta(days=90)
-    
-    for i in range(200):
-        framework = random.choice(frameworks)
-        date = base_date + timedelta(days=random.randint(0, 90))
-        severity = random.choices(severities, weights=[5, 15, 40, 40])[0]
-        
-        data.append({
-            'date': date,
-            'project': random.choice(['frontend-app', 'backend-api', 'data-service', 'auth-service']),
-            'mr_id': random.randint(1, 500),
-            'framework': framework,
-            'control_id': random.choice(controls[framework]),
-            'severity': severity,
-            'compliance_score': random.randint(40, 100),
-            'status': random.choice(['open', 'remediated', 'accepted']),
-            'title': random.choice([
-                'Hardcoded API key detected',
-                'SQL injection vulnerability',
-                'Weak password hashing',
-                'Missing input validation',
-                'Insecure session management',
-                'Outdated dependency with CVE',
-                'Debug mode enabled',
-                'Missing encryption',
-                'Excessive permissions',
-                'Missing audit logging'
-            ])
-        })
-    
-    return pd.DataFrame(data)
+@st.cache_resource
+def init_data_loader():
+    """Initialize the data loader (cached)."""
+    return get_data_loader()
 
-
-@st.cache_data(ttl=300)
-def generate_mock_reports():
-    """Generate mock PDF reports data."""
-    reports = []
-    for i in range(15):
-        date = datetime.now() - timedelta(days=random.randint(0, 30))
-        score = random.randint(45, 98)
-        reports.append({
-            'id': f'RPT-{1000+i}',
-            'project': random.choice(['frontend-app', 'backend-api', 'data-service', 'auth-service']),
-            'mr_id': random.randint(1, 100),
-            'date': date,
-            'score': score,
-            'status': 'Pass' if score >= 85 else 'Fail',
-            'findings': random.randint(0, 25),
-            'frameworks': random.sample(['SOC 2', 'ISO 27001', 'PCI-DSS', 'HIPAA'], k=random.randint(2, 4)),
-            'size': f'{random.randint(100, 500)} KB',
-            'url': f'https://storage.googleapis.com/compliance-evidence/reports/report-{i}.pdf'
-        })
-    return sorted(reports, key=lambda x: x['date'], reverse=True)
-
-
-@st.cache_data(ttl=300)
-def generate_mock_evidence():
-    """Generate mock evidence packages data."""
-    evidence = []
-    for i in range(20):
-        date = datetime.now() - timedelta(days=random.randint(0, 60))
-        evidence.append({
-            'id': f'EVD-{2000+i}',
-            'project': random.choice(['frontend-app', 'backend-api', 'data-service', 'auth-service']),
-            'type': random.choice(['MR Approvals', 'Pipeline Logs', 'Access Audit', 'Security Scans']),
-            'date': date,
-            'items': random.randint(5, 50),
-            'hash': f'sha256:{random.randbytes(8).hex()}...',
-            'controls_covered': random.randint(3, 12),
-            'size': f'{random.randint(50, 300)} KB',
-            'url': f'https://storage.googleapis.com/compliance-evidence/evidence/evidence-{i}.json'
-        })
-    return sorted(evidence, key=lambda x: x['date'], reverse=True)
+data_loader = init_data_loader()
 
 
 # =============================================================================
@@ -228,6 +173,26 @@ def generate_mock_evidence():
 with st.sidebar:
     st.image("https://about.gitlab.com/images/press/logo/png/gitlab-logo-500.png", width=150)
     st.markdown("### 🛡️ ComplianceBot")
+    st.markdown("---")
+    
+    # Data Source Status (Auto-detected!)
+    st.markdown("#### 📡 Data Source")
+    if data_loader.is_live:
+        st.markdown("""
+        <div class="data-source-live">
+            ✅ LIVE - BigQuery Connected
+        </div>
+        """, unsafe_allow_html=True)
+        st.caption("Real-time data from GCP")
+    else:
+        st.markdown("""
+        <div class="data-source-demo">
+            🎭 DEMO MODE
+        </div>
+        """, unsafe_allow_html=True)
+        st.caption("Using mock data for demo")
+        st.caption("Set GCP_PROJECT_ID for live data")
+    
     st.markdown("---")
     
     # Filters
@@ -258,24 +223,6 @@ with st.sidebar:
     )
     
     st.markdown("---")
-    
-    # GCP Status
-    st.markdown("#### ☁️ GCP Status")
-    
-    # Check if GCP is configured (mock for demo)
-    gcp_configured = False  # Set to True when GCP is configured
-    
-    if gcp_configured:
-        st.success("✅ Connected")
-        st.caption("BigQuery: Active")
-        st.caption("Cloud Storage: Active")
-        st.caption("Vertex AI: Active")
-    else:
-        st.warning("⚠️ Demo Mode")
-        st.caption("Using mock data")
-        st.caption("Configure GCP for live data")
-    
-    st.markdown("---")
     st.markdown("#### 📚 Resources")
     st.markdown("[📖 Documentation](https://gitlab.com/gitlab-ai-hackathon/participants/35481656)")
     st.markdown("[🐛 Report Issue](https://gitlab.com/gitlab-ai-hackathon/participants/35481656/-/issues)")
@@ -295,12 +242,34 @@ st.markdown("""
 
 
 # =============================================================================
-# LOAD DATA
+# LOAD DATA (Automatically uses BigQuery or mock data)
 # =============================================================================
 
-df = generate_mock_findings()
-reports = generate_mock_reports()
-evidence = generate_mock_evidence()
+# Determine days based on filter
+days_map = {
+    'Last 7 days': 7,
+    'Last 30 days': 30,
+    'Last 90 days': 90,
+    'All time': 365
+}
+days = days_map.get(date_range, 90)
+
+# Load data using the data loader (auto-switches between demo/live)
+@st.cache_data(ttl=300)
+def load_findings(_loader, days):
+    return _loader.get_findings(days)
+
+@st.cache_data(ttl=300)
+def load_reports(_loader):
+    return _loader.get_reports(limit=20)
+
+@st.cache_data(ttl=300)
+def load_evidence(_loader):
+    return _loader.get_evidence(limit=30)
+
+df = load_findings(data_loader, days)
+reports = load_reports(data_loader)
+evidence = load_evidence(data_loader)
 
 # Apply filters
 df_filtered = df[
@@ -324,7 +293,7 @@ elif date_range == 'Last 90 days':
 col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
-    avg_score = df_filtered['compliance_score'].mean()
+    avg_score = df_filtered['compliance_score'].mean() if len(df_filtered) > 0 else 0
     st.metric(
         label="📊 Avg Compliance Score",
         value=f"{avg_score:.0f}/100",
@@ -350,7 +319,7 @@ with col3:
     )
 
 with col4:
-    total_scans = len(df_filtered['mr_id'].unique())
+    total_scans = len(df_filtered['mr_id'].unique()) if len(df_filtered) > 0 else 0
     st.metric(
         label="🔍 MRs Scanned",
         value=total_scans,
@@ -358,7 +327,7 @@ with col4:
     )
 
 with col5:
-    remediated = len(df_filtered[df_filtered['status'] == 'remediated'])
+    remediated = len(df_filtered[df_filtered['status'] == 'remediated']) if len(df_filtered) > 0 else 0
     st.metric(
         label="✅ Remediated",
         value=remediated,
@@ -376,44 +345,50 @@ chart_col1, chart_col2 = st.columns(2)
 
 with chart_col1:
     # Compliance Score Trend
-    daily_scores = df_filtered.groupby(df_filtered['date'].dt.date)['compliance_score'].mean().reset_index()
-    daily_scores.columns = ['date', 'score']
-    
-    fig_trend = px.line(
-        daily_scores,
-        x='date',
-        y='score',
-        title='Compliance Score Over Time',
-        labels={'date': 'Date', 'score': 'Average Score'},
-        template='plotly_white'
-    )
-    fig_trend.update_traces(
-        line=dict(color='#667eea', width=3),
-        fill='tozeroy',
-        fillcolor='rgba(102, 126, 234, 0.1)'
-    )
-    fig_trend.add_hline(y=85, line_dash="dash", line_color="green", annotation_text="Pass Threshold (85)")
-    fig_trend.update_layout(height=350)
-    st.plotly_chart(fig_trend, use_container_width=True)
+    if len(df_filtered) > 0:
+        daily_scores = df_filtered.groupby(df_filtered['date'].dt.date)['compliance_score'].mean().reset_index()
+        daily_scores.columns = ['date', 'score']
+        
+        fig_trend = px.line(
+            daily_scores,
+            x='date',
+            y='score',
+            title='Compliance Score Over Time',
+            labels={'date': 'Date', 'score': 'Average Score'},
+            template='plotly_white'
+        )
+        fig_trend.update_traces(
+            line=dict(color='#667eea', width=3),
+            fill='tozeroy',
+            fillcolor='rgba(102, 126, 234, 0.1)'
+        )
+        fig_trend.add_hline(y=85, line_dash="dash", line_color="green", annotation_text="Pass Threshold (85)")
+        fig_trend.update_layout(height=350)
+        st.plotly_chart(fig_trend, use_container_width=True)
+    else:
+        st.info("No data available for the selected filters")
 
 with chart_col2:
     # Findings by Severity
-    severity_counts = df_filtered['severity'].value_counts().reset_index()
-    severity_counts.columns = ['severity', 'count']
-    
-    colors = {'critical': '#e74c3c', 'high': '#f39c12', 'medium': '#3498db', 'low': '#27ae60'}
-    
-    fig_severity = px.pie(
-        severity_counts,
-        values='count',
-        names='severity',
-        title='Findings by Severity',
-        color='severity',
-        color_discrete_map=colors,
-        hole=0.4
-    )
-    fig_severity.update_layout(height=350)
-    st.plotly_chart(fig_severity, use_container_width=True)
+    if len(df_filtered) > 0:
+        severity_counts = df_filtered['severity'].value_counts().reset_index()
+        severity_counts.columns = ['severity', 'count']
+        
+        colors = {'critical': '#e74c3c', 'high': '#f39c12', 'medium': '#3498db', 'low': '#27ae60'}
+        
+        fig_severity = px.pie(
+            severity_counts,
+            values='count',
+            names='severity',
+            title='Findings by Severity',
+            color='severity',
+            color_discrete_map=colors,
+            hole=0.4
+        )
+        fig_severity.update_layout(height=350)
+        st.plotly_chart(fig_severity, use_container_width=True)
+    else:
+        st.info("No data available for the selected filters")
 
 
 # Second row of charts
@@ -421,41 +396,47 @@ chart_col3, chart_col4 = st.columns(2)
 
 with chart_col3:
     # Findings by Framework
-    framework_counts = df_filtered['framework'].value_counts().reset_index()
-    framework_counts.columns = ['framework', 'count']
-    
-    fig_framework = px.bar(
-        framework_counts,
-        x='framework',
-        y='count',
-        title='Findings by Framework',
-        color='framework',
-        color_discrete_sequence=px.colors.qualitative.Set2,
-        template='plotly_white'
-    )
-    fig_framework.update_layout(height=350, showlegend=False)
-    st.plotly_chart(fig_framework, use_container_width=True)
+    if len(df_filtered) > 0:
+        framework_counts = df_filtered['framework'].value_counts().reset_index()
+        framework_counts.columns = ['framework', 'count']
+        
+        fig_framework = px.bar(
+            framework_counts,
+            x='framework',
+            y='count',
+            title='Findings by Framework',
+            color='framework',
+            color_discrete_sequence=px.colors.qualitative.Set2,
+            template='plotly_white'
+        )
+        fig_framework.update_layout(height=350, showlegend=False)
+        st.plotly_chart(fig_framework, use_container_width=True)
+    else:
+        st.info("No data available")
 
 with chart_col4:
     # Findings by Project
-    project_counts = df_filtered.groupby('project').agg({
-        'compliance_score': 'mean',
-        'severity': 'count'
-    }).reset_index()
-    project_counts.columns = ['project', 'avg_score', 'findings']
-    
-    fig_project = px.bar(
-        project_counts,
-        x='project',
-        y='avg_score',
-        title='Average Compliance Score by Project',
-        color='avg_score',
-        color_continuous_scale='RdYlGn',
-        template='plotly_white'
-    )
-    fig_project.add_hline(y=85, line_dash="dash", line_color="green")
-    fig_project.update_layout(height=350)
-    st.plotly_chart(fig_project, use_container_width=True)
+    if len(df_filtered) > 0:
+        project_counts = df_filtered.groupby('project').agg({
+            'compliance_score': 'mean',
+            'severity': 'count'
+        }).reset_index()
+        project_counts.columns = ['project', 'avg_score', 'findings']
+        
+        fig_project = px.bar(
+            project_counts,
+            x='project',
+            y='avg_score',
+            title='Average Compliance Score by Project',
+            color='avg_score',
+            color_continuous_scale='RdYlGn',
+            template='plotly_white'
+        )
+        fig_project.add_hline(y=85, line_dash="dash", line_color="green")
+        fig_project.update_layout(height=350)
+        st.plotly_chart(fig_project, use_container_width=True)
+    else:
+        st.info("No data available")
 
 
 # =============================================================================
@@ -495,20 +476,26 @@ for i in range(0, len(filtered_reports), 3):
                         <span>🔍 {report['findings']} findings</span>
                     </div>
                     <div style="color: #888; font-size: 0.85rem; margin-top: 0.5rem;">
-                        📅 {report['date'].strftime('%Y-%m-%d %H:%M')} • {report['size']}
+                        📅 {report['date'].strftime('%Y-%m-%d %H:%M') if hasattr(report['date'], 'strftime') else report['date']} • {report['size']}
                     </div>
                     <div style="margin-top: 0.5rem;">
                         {''.join([f'<span class="badge badge-medium" style="margin-right: 4px; font-size: 0.7rem;">{f}</span>' for f in report['frameworks'][:3]])}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-                st.download_button(
-                    "📥 Download PDF",
-                    data=b"Mock PDF content",  # Replace with actual PDF
-                    file_name=f"{report['id']}.pdf",
-                    mime="application/pdf",
-                    key=f"dl_{report['id']}"
-                )
+                
+                # Download button (works with real URLs when GCP is configured)
+                if report['url'] != '#':
+                    st.link_button("📥 Download PDF", report['url'], use_container_width=True)
+                else:
+                    st.download_button(
+                        "📥 Download PDF",
+                        data=b"Mock PDF content - Configure GCP for real reports",
+                        file_name=f"{report['id']}.pdf",
+                        mime="application/pdf",
+                        key=f"dl_{report['id']}",
+                        use_container_width=True
+                    )
 
 
 # =============================================================================
@@ -527,24 +514,27 @@ evidence_type_filter = st.selectbox(
 filtered_evidence = evidence if evidence_type_filter == 'All Types' else [e for e in evidence if e['type'] == evidence_type_filter]
 
 # Display evidence in a table
-evidence_df = pd.DataFrame(filtered_evidence)
-evidence_df['date'] = pd.to_datetime(evidence_df['date']).dt.strftime('%Y-%m-%d %H:%M')
-
-st.dataframe(
-    evidence_df[['id', 'project', 'type', 'date', 'items', 'controls_covered', 'size', 'hash']],
-    use_container_width=True,
-    hide_index=True,
-    column_config={
-        'id': st.column_config.TextColumn('ID', width='small'),
-        'project': st.column_config.TextColumn('Project', width='medium'),
-        'type': st.column_config.TextColumn('Type', width='medium'),
-        'date': st.column_config.TextColumn('Date', width='medium'),
-        'items': st.column_config.NumberColumn('Items', width='small'),
-        'controls_covered': st.column_config.NumberColumn('Controls', width='small'),
-        'size': st.column_config.TextColumn('Size', width='small'),
-        'hash': st.column_config.TextColumn('Hash', width='medium'),
-    }
-)
+if filtered_evidence:
+    evidence_df = pd.DataFrame(filtered_evidence)
+    evidence_df['date'] = pd.to_datetime(evidence_df['date']).dt.strftime('%Y-%m-%d %H:%M')
+    
+    st.dataframe(
+        evidence_df[['id', 'project', 'type', 'date', 'items', 'controls_covered', 'size', 'hash']],
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            'id': st.column_config.TextColumn('ID', width='small'),
+            'project': st.column_config.TextColumn('Project', width='medium'),
+            'type': st.column_config.TextColumn('Type', width='medium'),
+            'date': st.column_config.TextColumn('Date', width='medium'),
+            'items': st.column_config.NumberColumn('Items', width='small'),
+            'controls_covered': st.column_config.NumberColumn('Controls', width='small'),
+            'size': st.column_config.TextColumn('Size', width='small'),
+            'hash': st.column_config.TextColumn('Hash', width='medium'),
+        }
+    )
+else:
+    st.info("No evidence packages found")
 
 
 # =============================================================================
@@ -553,36 +543,39 @@ st.dataframe(
 
 st.markdown('<div class="section-header">🔍 Recent Findings</div>', unsafe_allow_html=True)
 
-# Show recent findings
-recent_findings = df_filtered.sort_values('date', ascending=False).head(20)
-
-def severity_badge(severity):
-    colors = {
-        'critical': '🔴',
-        'high': '🟠',
-        'medium': '🟡',
-        'low': '🟢'
-    }
-    return colors.get(severity, '⚪')
-
-recent_findings['severity_icon'] = recent_findings['severity'].apply(severity_badge)
-recent_findings['date_str'] = recent_findings['date'].dt.strftime('%Y-%m-%d')
-
-st.dataframe(
-    recent_findings[['date_str', 'project', 'severity_icon', 'severity', 'framework', 'control_id', 'title', 'status']],
-    use_container_width=True,
-    hide_index=True,
-    column_config={
-        'date_str': st.column_config.TextColumn('Date', width='small'),
-        'project': st.column_config.TextColumn('Project', width='medium'),
-        'severity_icon': st.column_config.TextColumn('', width='small'),
-        'severity': st.column_config.TextColumn('Severity', width='small'),
-        'framework': st.column_config.TextColumn('Framework', width='small'),
-        'control_id': st.column_config.TextColumn('Control', width='small'),
-        'title': st.column_config.TextColumn('Finding', width='large'),
-        'status': st.column_config.TextColumn('Status', width='small'),
-    }
-)
+if len(df_filtered) > 0:
+    # Show recent findings
+    recent_findings = df_filtered.sort_values('date', ascending=False).head(20).copy()
+    
+    def severity_badge(severity):
+        colors = {
+            'critical': '🔴',
+            'high': '🟠',
+            'medium': '🟡',
+            'low': '🟢'
+        }
+        return colors.get(severity, '⚪')
+    
+    recent_findings['severity_icon'] = recent_findings['severity'].apply(severity_badge)
+    recent_findings['date_str'] = recent_findings['date'].dt.strftime('%Y-%m-%d')
+    
+    st.dataframe(
+        recent_findings[['date_str', 'project', 'severity_icon', 'severity', 'framework', 'control_id', 'title', 'status']],
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            'date_str': st.column_config.TextColumn('Date', width='small'),
+            'project': st.column_config.TextColumn('Project', width='medium'),
+            'severity_icon': st.column_config.TextColumn('', width='small'),
+            'severity': st.column_config.TextColumn('Severity', width='small'),
+            'framework': st.column_config.TextColumn('Framework', width='small'),
+            'control_id': st.column_config.TextColumn('Control', width='small'),
+            'title': st.column_config.TextColumn('Finding', width='large'),
+            'status': st.column_config.TextColumn('Status', width='small'),
+        }
+    )
+else:
+    st.info("No findings match the selected filters")
 
 
 # =============================================================================
@@ -590,13 +583,21 @@ st.dataframe(
 # =============================================================================
 
 st.markdown("---")
-st.markdown("""
+
+# Show data source info
+if data_loader.is_live:
+    source_info = "🟢 Connected to BigQuery | Real-time data"
+else:
+    source_info = "🟡 Demo Mode | Set GCP_PROJECT_ID and GCP_SERVICE_ACCOUNT_KEY for live data"
+
+st.markdown(f"""
 <div style="text-align: center; color: #888; padding: 1rem;">
+    <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">{source_info}</p>
     <p>🛡️ <strong>ComplianceBot Dashboard</strong> | Built for GitLab AI Hackathon 2026</p>
     <p>
         <a href="https://gitlab.com/gitlab-ai-hackathon/participants/35481656" target="_blank">GitLab Repo</a> •
         <a href="https://gitlab.devpost.com" target="_blank">Hackathon</a> •
-        <a href="https://docs.google.com/document/d/compliancebot" target="_blank">Documentation</a>
+        <a href="https://gitlab.com/gitlab-ai-hackathon/participants/35481656/-/blob/main/docs/GCP_SETUP.md" target="_blank">GCP Setup Guide</a>
     </p>
 </div>
 """, unsafe_allow_html=True)
