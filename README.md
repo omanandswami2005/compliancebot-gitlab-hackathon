@@ -181,10 +181,12 @@ Test coverage includes:
 For GitLab AI Hackathon 2026:
 
 1. ✅ Create public agents (all 4 ready)
-2. ✅ Create public flow (ready)
-3. 📋 Follow [Publishing Guide](docs/PUBLISHING_GUIDE.md) Section 4-5
+2. ✅ Create public flow (published to AI Catalog)
+3. ✅ Follow [Publishing Guide](docs/PUBLISHING_GUIDE.md) Section 4-5
 4. 📹 Record 3-minute demo video
 5. 📤 Submit to [gitlab.devpost.com](https://gitlab.devpost.com) before **March 25, 2026 @ 2 PM EDT**
+
+**Latest Release**: `v1.1.0` (March 21, 2026)
 
 See [Publishing Guide Section 7](docs/PUBLISHING_GUIDE.md#7-hackathon-submission-checklist) for complete submission requirements.
 

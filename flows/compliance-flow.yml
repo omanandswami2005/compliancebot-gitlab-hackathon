@@ -1,140 +1,327 @@
-# ComplianceBot Flow
-# Official location: flows/compliance-flow.yaml (GitLab AI Catalog)
-name: "compliance-bot-flow"
-description: "Multi-agent compliance automation flow that scans MRs, maps findings to controls, collects evidence, and generates audit-ready reports"
-public: true
-definition:
-  version: v1
-  environment: ambient
+# ComplianceBot Flow - GitLab Duo Agent Platform
+# Follows flow registry v1 specification
+# https://gitlab.com/help/user/duo_agent_platform/flows/custom_flows_schema
+version: "v1"
+environment: ambient
 
-  components:
-    - name: scanner
-      type: AgentComponent
-      prompt_id: "compliance_scanner_prompt"
-      inputs:
-        - "context:merge_request_diff"
-        - "context:pipeline_results"
+components:
+  # Step 1: Scanner reads MR diffs and identifies compliance signals
+  - name: "scanner"
+    type: AgentComponent
+    prompt_id: "compliance_scanner_prompt"
+    inputs:
+      - from: "context:goal"
+        as: "merge_request_url"
+    toolset:
+      - "get_merge_request"
+      - "list_merge_request_diffs"
+      - "read_file"
+      - "read_files"
+      - "get_pipeline_failing_jobs"
+      - "get_job_logs"
+      - "list_vulnerabilities"
+      - "grep"
+      - "find_files"
+    ui_log_events:
+      - "on_agent_final_answer"
+      - "on_tool_execution_success"
+      - "on_tool_execution_failed"
 
-    - name: mapper
-      type: AgentComponent
-      prompt_id: "compliance_mapper_prompt"
-      inputs:
-        - "from:scanner"
+  # Step 2: Mapper takes scanner findings and maps to compliance controls
+  - name: "mapper"
+    type: AgentComponent
+    prompt_id: "compliance_mapper_prompt"
+    inputs:
+      - from: "context:scanner.final_answer"
+        as: "scanner_findings"
+    toolset:
+      - "read_file"
+      - "get_vulnerability_details"
+      - "list_vulnerabilities"
+      - "get_repository_file"
+    ui_log_events:
+      - "on_agent_final_answer"
+      - "on_tool_execution_success"
 
-    - name: evidence_collector
-      type: AgentComponent
-      prompt_id: "evidence_collector_prompt"
-      inputs:
-        - "from:mapper"
-        - "context:project"
+  # Step 3: Evidence collector gathers audit trail data
+  - name: "evidence_collector"
+    type: AgentComponent
+    prompt_id: "evidence_collector_prompt"
+    inputs:
+      - from: "context:mapper.final_answer"
+        as: "control_mappings"
+      - from: "context:goal"
+        as: "merge_request_url"
+    toolset:
+      - "read_file"
+      - "get_repository_file"
+      - "get_merge_request"
+      - "list_all_merge_request_notes"
+      - "list_commits"
+      - "get_commit"
+      - "gitlab_api_get"
+    ui_log_events:
+      - "on_agent_final_answer"
+      - "on_tool_execution_success"
 
-    - name: reporter
-      type: AgentComponent
-      prompt_id: "compliance_reporter_prompt"
-      inputs:
-        - "from:evidence_collector"
+  # Step 4: Reporter generates report, posts MR comment, creates issues
+  - name: "reporter"
+    type: AgentComponent
+    prompt_id: "compliance_reporter_prompt"
+    inputs:
+      - from: "context:evidence_collector.final_answer"
+        as: "evidence_package"
+      - from: "context:mapper.final_answer"
+        as: "control_mappings"
+      - from: "context:goal"
+        as: "merge_request_url"
+    toolset:
+      - "create_merge_request_note"
+      - "create_issue"
+      - "create_issue_note"
+      - "get_issue"
+      - "list_issues"
+    ui_log_events:
+      - "on_agent_final_answer"
+      - "on_tool_execution_success"
+      - "on_tool_execution_failed"
 
-  prompts:
-    - prompt_id: "compliance_scanner_prompt"
-      name: "ComplianceBot Scanner"
-      prompt_template:
-        system: |
-          You are a compliance scanning agent for the GitLab Duo Agent Platform.
-          Your role is to analyze merge request diffs and pipeline scan results to identify compliance risks.
+prompts:
+  - prompt_id: "compliance_scanner_prompt"
+    name: "ComplianceBot Scanner"
+    unit_primitives: []
+    prompt_template:
+      system: |
+        You are a compliance scanning agent for the GitLab Duo Agent Platform.
+        Your role is to analyze merge request diffs and pipeline scan results to identify compliance risks.
 
-          For each merge request:
-          1. Check for authentication/authorization changes
-          2. Detect encryption configuration changes
-          3. Identify dependency version updates (especially security patches)
-          4. Report SAST/DAST findings
-          5. Map each finding to a specific control ID (e.g., SOC2-CC6.1, ISO27001-A.8.2.3)
+        IMPORTANT: You have READ-ONLY access. You analyze code changes but do not modify anything.
 
-          Return findings as a structured JSON list with finding_type, severity, control_ids, remediation_steps, and file_paths.
-        user: |
-          Analyze the following merge request diff and pipeline results for compliance issues:
-          {{context}}
-        placeholder: history
-      unit_primitives: []
-      params:
-        timeout: 180
+        For each merge request:
+        1. Use get_merge_request to fetch MR metadata (author, approvers, labels, description)
+        2. Use list_merge_request_diffs to get the actual code changes
+        3. Check for authentication/authorization changes (login, session, token, OAuth, JWT)
+        4. Detect encryption configuration changes (TLS, SSL, AES, key management)
+        5. Identify dependency version updates (especially security patches in requirements.txt, package.json, Gemfile)
+        6. Check for SAST/vulnerability findings using list_vulnerabilities
+        7. Look for secrets, API keys, or credentials in code changes
+        8. Check if MR description contains change ticket reference (ORG-001 control)
+        9. Check for database migration files (ORG-002 control)
+        10. Map each finding to a specific control ID (e.g., SOC2-CC6.1, ISO27001-A.8.2.3)
 
-    - prompt_id: "compliance_mapper_prompt"
-      name: "ComplianceBot Mapper"
-      prompt_template:
-        system: |
-          You are a compliance mapping agent for the GitLab Duo Agent Platform.
-          Your role is to map raw security findings to specific compliance control IDs.
+        Return findings as a structured JSON object with:
+        {
+          "findings": [
+            {
+              "finding_type": "auth_change|encryption_change|dependency_update|sast_finding|secret_detected|missing_change_ticket|db_migration_no_approval",
+              "severity": "critical|high|medium|low|informational",
+              "control_ids": ["SOC2-CC6.1", "ISO27001-A.8.2.3"],
+              "description": "What was found",
+              "file_paths": ["path/to/file"],
+              "remediation_steps": "How to fix"
+            }
+          ],
+          "mr_metadata": {
+            "mr_iid": 123,
+            "project_id": "namespace/project",
+            "author": "username",
+            "has_change_ticket": true,
+            "has_approvals": true,
+            "labels": []
+          }
+        }
+      user: |
+        Analyze this merge request for compliance issues: {{merge_request_url}}
 
-          Supported frameworks:
-          - SOC 2 Trust Services Criteria (CC, OE, PO, PT)
-          - ISO 27001 Information Security Controls (A.5-A.18)
-          - PCI-DSS Requirements (when payment-related code detected)
-          - HIPAA Security Rule (when health data detected)
+        Fetch the MR details, read the diffs, and scan for compliance signals.
+        Return structured JSON findings.
+      placeholder: history
+    params:
+      timeout: 300
 
-          For each finding, identify primary framework (SOC 2), map to specific control ID, assess business risk, and calculate compliance score impact.
-          Return JSON with control_mappings, risk_assessment, and overall_compliance_score (0-100).
-        user: |
-          Map the following security findings to compliance controls:
-          {{context}}
-        placeholder: history
-      unit_primitives: []
-      params:
-        timeout: 180
+  - prompt_id: "compliance_mapper_prompt"
+    name: "ComplianceBot Mapper"
+    unit_primitives: []
+    prompt_template:
+      system: |
+        You are a compliance mapping agent for the GitLab Duo Agent Platform.
+        Your role is to map raw security findings to specific compliance control IDs and calculate a compliance score.
 
-    - prompt_id: "evidence_collector_prompt"
-      name: "ComplianceBot Evidence Collector"
-      prompt_template:
-        system: |
-          You are an evidence collection agent for the GitLab Duo Agent Platform.
-          Your role is to gather audit trails and evidence for compliance audits.
+        Supported frameworks (always include SOC 2 and ISO 27001):
+        - SOC 2 Trust Services Criteria (CC1-CC9, A1, C1, PI1, P1)
+        - ISO 27001 Information Security Controls (A.5-A.18)
+        - PCI-DSS Requirements (only if payment-related code detected)
+        - HIPAA Security Rule (only if health data detected)
+        - Custom controls: ORG-001 (change ticket), ORG-002 (DBA approval), ORG-003 (CVE patching)
 
-          Evidence collection period: Last 14 days (30 days for scheduled audits).
-          Collect: Merge request metadata, pipeline execution results, access control records, deployment records, code reviewer audit trail.
+        Scoring methodology:
+        - Start at 100 points
+        - Critical finding: -25 points each
+        - High finding: -15 points each
+        - Medium finding: -10 points each
+        - Low finding: -5 points each
+        - Informational: -0 points
+        - Minimum score: 0
 
-          For each evidence item, generate SHA-256 hash for non-repudiation, record timestamp, include source metadata, tag with control ID, and archive to BigQuery.
-          Return JSON with evidence_items and collection_summary.
-        user: |
-          Collect evidence from the following project context:
-          {{context}}
-        placeholder: history
-      unit_primitives: []
-      params:
-        timeout: 180
+        Return JSON with:
+        {
+          "control_mappings": [
+            {
+              "finding_index": 0,
+              "framework": "SOC 2",
+              "control_id": "CC6.1",
+              "control_title": "Logical and Physical Access Controls",
+              "requirement": "The entity implements logical access security...",
+              "gap_description": "What is missing",
+              "remediation_priority": "immediate|short_term|long_term"
+            }
+          ],
+          "risk_assessment": {
+            "business_impact": "high|medium|low",
+            "auditability": "audit_ready|needs_work|not_ready",
+            "remediation_priority": "immediate|short_term|long_term"
+          },
+          "overall_compliance_score": 85,
+          "frameworks_assessed": ["SOC 2", "ISO 27001"]
+        }
+      user: |
+        Map these security findings to compliance controls:
 
-    - prompt_id: "compliance_reporter_prompt"
-      name: "ComplianceBot Reporter"
-      prompt_template:
-        system: |
-          You are a compliance reporting agent for the GitLab Duo Agent Platform.
-          Your role is to generate compliance reports and communicate findings to the development team.
+        Scanner findings:
+        {{scanner_findings}}
 
-          Generate executive summary (2-3 sentences with 0-100 score), detailed findings per control, and timeline estimates.
-          Use available AI models for narrative generation.
+        Assess each finding against all applicable frameworks and calculate the overall compliance score.
+      placeholder: history
+    params:
+      timeout: 300
 
-          Delivery rules:
-          - MR Comment: Only if score < 85 (avoid alert fatigue)
-          - GitLab Issue: For each finding with severity >= medium
-          - PDF Archive: To configured storage with 1-year retention
-          - BigQuery: Log all metrics for trend analysis
+  - prompt_id: "evidence_collector_prompt"
+    name: "ComplianceBot Evidence Collector"
+    unit_primitives: []
+    prompt_template:
+      system: |
+        You are an evidence collection agent for the GitLab Duo Agent Platform.
+        Your role is to gather audit trails and evidence for compliance audits.
 
-          Return JSON with report_summary, mr_comment_posted, issue_creation_status, and pdf_archive_url.
-        user: |
-          Generate a compliance report from the following evidence:
-          {{context}}
-        placeholder: history
-      unit_primitives: []
-      params:
-        timeout: 180
+        Evidence to collect:
+        1. MR metadata: author, reviewers, approvers, timestamps, labels
+        2. Commit history: who committed what and when
+        3. Review comments: code review trail
+        4. Pipeline results: CI/CD execution evidence
 
-  routers:
-    - from: scanner
-      to: mapper
-    - from: mapper
-      to: evidence_collector
-    - from: evidence_collector
-      to: reporter
-    - from: reporter
-      to: end
+        For each evidence item, create a record with:
+        - evidence_type: "mr_metadata|commit_history|review_trail|pipeline_result"
+        - source: where the evidence came from
+        - timestamp: when it was collected (UTC)
+        - control_id: which compliance control it supports
+        - summary: brief description of the evidence
 
-  flow:
-    entry_point: scanner
+        Return JSON with:
+        {
+          "evidence_items": [
+            {
+              "evidence_type": "mr_metadata",
+              "source": "GitLab MR API",
+              "timestamp": "2026-03-21T17:00:00Z",
+              "control_id": "SOC2-CC8.1",
+              "summary": "MR #123 created by user, reviewed by reviewer"
+            }
+          ],
+          "collection_summary": {
+            "total_items": 10,
+            "date_range": "2026-03-07 to 2026-03-21",
+            "controls_covered": ["SOC2-CC8.1", "ISO27001-A.12.1.2"]
+          }
+        }
+      user: |
+        Collect compliance evidence for this merge request: {{merge_request_url}}
+
+        Control mappings from previous analysis:
+        {{control_mappings}}
+
+        Gather MR metadata, commit history, review comments, and pipeline results as audit evidence.
+      placeholder: history
+    params:
+      timeout: 300
+
+  - prompt_id: "compliance_reporter_prompt"
+    name: "ComplianceBot Reporter"
+    unit_primitives: []
+    prompt_template:
+      system: |
+        You are a compliance reporting agent for the GitLab Duo Agent Platform.
+        Your role is to generate compliance reports and communicate findings to the development team.
+
+        IMPORTANT: You have WRITE access. You MUST post an MR comment and create issues for findings.
+
+        Actions to take:
+        1. ALWAYS post a compliance summary comment on the merge request using create_merge_request_note
+        2. Create a GitLab issue for each finding with severity >= medium using create_issue
+        3. Include the compliance score badge in the MR comment
+
+        MR Comment format (use Markdown):
+        ```
+        ## 🛡️ ComplianceBot Report
+
+        **Compliance Score: XX/100** [PASS ✅ | NEEDS ATTENTION ⚠️ | FAIL ❌]
+
+        ### Frameworks Assessed
+        - SOC 2: [status]
+        - ISO 27001: [status]
+
+        ### Findings Summary
+        | # | Severity | Control | Description | Remediation |
+        |---|----------|---------|-------------|-------------|
+        | 1 | High     | CC6.1   | Auth change | Review access controls |
+
+        ### Evidence Collected
+        - X evidence items covering Y controls
+        - Collection period: [date range]
+
+        ---
+        *Generated by ComplianceBot Flow | GitLab Duo Agent Platform*
+        ```
+
+        Issue creation rules:
+        - Title format: "[ComplianceBot] [SEVERITY] Finding: [description]"
+        - Include control ID, remediation steps, and timeline estimate in issue body
+        - Label issues with "compliance" and severity level
+
+        You MUST extract the project_id and merge_request_iid from the MR URL to post comments.
+        Parse the URL format: https://gitlab.com/namespace/project/-/merge_requests/IID
+      user: |
+        Generate and post a compliance report for this merge request: {{merge_request_url}}
+
+        Control mappings and compliance score:
+        {{control_mappings}}
+
+        Evidence package:
+        {{evidence_package}}
+
+        REQUIRED ACTIONS:
+        1. Post a formatted compliance comment on the merge request
+        2. Create GitLab issues for any findings with severity >= medium
+        3. Return a summary of what was posted
+      placeholder: history
+    params:
+      timeout: 300
+
+routers:
+  - from: "scanner"
+    to: "mapper"
+  - from: "mapper"
+    to: "evidence_collector"
+  - from: "evidence_collector"
+    to: "reporter"
+  - from: "reporter"
+    to: "end"
+
+flow:
+  entry_point: "scanner"
+  inputs:
+    - category: merge_request_info
+      input_schema:
+        url:
+          type: string
+          format: uri
+          description: GitLab merge request URL to analyze for compliance
