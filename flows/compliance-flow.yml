@@ -14,8 +14,8 @@ definition:
       type: AgentComponent
       prompt_id: "compliance_scanner_prompt"
       inputs:
-        - from: "context:merge_request"
-          as: "merge_request_context"
+        - from: "context:goal"
+          as: "user_request"
       toolset:
         - "get_merge_request"
         - "list_merge_request_diffs"
@@ -54,8 +54,8 @@ definition:
       inputs:
         - from: "context:mapper.final_answer"
           as: "control_mappings"
-        - from: "context:merge_request"
-          as: "merge_request_context"
+        - from: "context:scanner.final_answer"
+          as: "scanner_findings"
       toolset:
         - "read_file"
         - "get_repository_file"
@@ -76,8 +76,8 @@ definition:
           as: "evidence_package"
         - from: "context:mapper.final_answer"
           as: "control_mappings"
-        - from: "context:merge_request"
-          as: "merge_request_context"
+        - from: "context:scanner.final_answer"
+          as: "scanner_findings"
       toolset:
         - "create_merge_request_note"
         - "create_work_item"
@@ -134,13 +134,20 @@ definition:
             }
           }
         user: |
-          Analyze this merge request for compliance issues.
+          Analyze the current merge request for compliance issues.
 
-          Merge Request Context:
-          {{merge_request_context}}
+          User Request: {{user_request}}
 
-          Use the project_id and merge_request_iid from the context above to fetch MR details with get_merge_request and list_merge_request_diffs.
-          Scan for compliance signals and return structured JSON findings.
+          IMPORTANT: You are triggered from a merge request context. The MR IID is provided in the context above.
+          
+          Steps:
+          1. Extract the merge request IID from the context (e.g., "MergeRequest IID: 10" means iid=10)
+          2. The project is: gitlab-ai-hackathon/participants/35481656
+          3. Use get_merge_request with url="https://gitlab.com/gitlab-ai-hackathon/participants/35481656/-/merge_requests/<IID>"
+          4. Use list_merge_request_diffs with the same URL to get code changes
+          5. Analyze for compliance issues and return JSON findings
+
+          Include the project_id and merge_request_iid in your mr_metadata output so downstream agents can use them.
         placeholder: history
       params:
         timeout: 300
@@ -242,13 +249,15 @@ definition:
         user: |
           Collect compliance evidence for this merge request.
 
-          Merge Request Context:
-          {{merge_request_context}}
+          Scanner findings (contains project_id and merge_request_iid):
+          {{scanner_findings}}
 
           Control mappings from previous analysis:
           {{control_mappings}}
 
-          Use the project_id and merge_request_iid from the context to gather MR metadata, commit history, review comments, and pipeline results as audit evidence.
+          Extract the project_id and merge_request_iid from the scanner_findings above.
+          Use the MR URL format: https://gitlab.com/<project_id>/-/merge_requests/<iid>
+          Gather MR metadata, commit history, review comments, and pipeline results as audit evidence.
         placeholder: history
       params:
         timeout: 300
@@ -301,8 +310,8 @@ definition:
         user: |
           Generate and post a compliance report for this merge request.
 
-          Merge Request Context:
-          {{merge_request_context}}
+          Scanner findings (contains project_id and merge_request_iid):
+          {{scanner_findings}}
 
           Control mappings and compliance score:
           {{control_mappings}}
@@ -311,10 +320,11 @@ definition:
           {{evidence_package}}
 
           REQUIRED ACTIONS:
-          1. Extract project_id and merge_request_iid from the context above
-          2. Post a formatted compliance comment on the merge request using create_merge_request_note
-          3. Create GitLab issues for any findings with severity >= medium using create_work_item
-          4. Return a summary of what was posted
+          1. Extract project_id and merge_request_iid from the scanner_findings above
+          2. Use the MR URL: https://gitlab.com/<project_id>/-/merge_requests/<iid>
+          3. Post a formatted compliance comment on the merge request using create_merge_request_note
+          4. Create GitLab issues for any findings with severity >= medium using create_work_item with type_name="Issue"
+          5. Return a summary of what was posted
         placeholder: history
       params:
         timeout: 300
