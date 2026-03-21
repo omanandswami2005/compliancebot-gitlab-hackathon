@@ -58,6 +58,46 @@ class DataLoader:
         """Check if using live data."""
         return self.gcp_configured
     
+    def get_projects(self) -> list:
+        """
+        Get list of projects with compliance data.
+        
+        In LIVE mode: Fetches from BigQuery (distinct projects with findings)
+        In DEMO mode: Returns hardcoded demo projects
+        
+        Returns:
+            List of project names/paths
+        """
+        if self.gcp_configured:
+            return self._get_projects_from_bigquery()
+        else:
+            return self._get_mock_projects()
+    
+    def _get_projects_from_bigquery(self) -> list:
+        """Fetch distinct projects from BigQuery."""
+        try:
+            query = f"""
+            SELECT DISTINCT project_id as project
+            FROM `{os.environ['GCP_PROJECT_ID']}.compliance.compliance_findings`
+            WHERE finding_date >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)
+            ORDER BY project
+            """
+            df = self.bq_client.query(query).to_dataframe()
+            return df['project'].tolist()
+        except Exception as e:
+            logger.error(f"Failed to fetch projects from BigQuery: {e}")
+            return self._get_mock_projects()
+    
+    def _get_mock_projects(self) -> list:
+        """Return demo project list."""
+        return [
+            'gitlab-ai-hackathon/participants/35481656',  # Our actual project
+            'frontend-app',
+            'backend-api', 
+            'data-service',
+            'auth-service'
+        ]
+    
     def get_findings(self, days: int = 90) -> pd.DataFrame:
         """
         Get compliance findings data.

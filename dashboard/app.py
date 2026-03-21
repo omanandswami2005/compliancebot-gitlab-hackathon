@@ -34,124 +34,275 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for beautiful UI
-st.markdown("""
-<style>
-    /* Main container */
-    .main {
-        padding: 0rem 1rem;
-    }
-    
-    /* Header styling */
-    .dashboard-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem;
-        border-radius: 15px;
-        color: white;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
-    }
-    
-    .dashboard-header h1 {
-        margin: 0;
-        font-size: 2.5rem;
-        font-weight: 700;
-    }
-    
-    .dashboard-header p {
-        margin: 0.5rem 0 0 0;
-        opacity: 0.9;
-        font-size: 1.1rem;
-    }
-    
-    /* Metric cards */
-    .metric-card {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border-left: 4px solid;
-        transition: transform 0.2s;
-    }
-    
-    .metric-card:hover {
-        transform: translateY(-2px);
-    }
-    
-    .metric-card.critical { border-left-color: #e74c3c; }
-    .metric-card.high { border-left-color: #f39c12; }
-    .metric-card.medium { border-left-color: #3498db; }
-    .metric-card.success { border-left-color: #27ae60; }
-    
-    /* Section headers */
-    .section-header {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #2c3e50;
-        margin: 2rem 0 1rem 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #667eea;
-    }
-    
-    /* Report cards */
-    .report-card {
-        background: white;
-        padding: 1.2rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.06);
-        margin-bottom: 1rem;
-        border: 1px solid #eee;
-    }
-    
-    .report-card:hover {
-        box-shadow: 0 4px 25px rgba(0,0,0,0.1);
-    }
-    
-    /* Status badges */
-    .badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-    
-    .badge-critical { background: #ffebee; color: #c62828; }
-    .badge-high { background: #fff3e0; color: #ef6c00; }
-    .badge-medium { background: #e3f2fd; color: #1565c0; }
-    .badge-low { background: #e8f5e9; color: #2e7d32; }
-    .badge-pass { background: #e8f5e9; color: #2e7d32; }
-    .badge-fail { background: #ffebee; color: #c62828; }
-    
-    /* Hide Streamlit branding */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    
-    /* Sidebar styling */
-    .css-1d391kg {
-        background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
-    }
-    
-    /* Data source indicator */
-    .data-source-live {
-        background: #e8f5e9;
-        color: #2e7d32;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        font-weight: 600;
-        text-align: center;
-    }
-    
-    .data-source-demo {
-        background: #fff3e0;
-        color: #ef6c00;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        font-weight: 600;
-        text-align: center;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Dark mode state (stored in session)
+if 'dark_mode' not in st.session_state:
+    st.session_state.dark_mode = False
+
+def get_theme_css(dark_mode: bool) -> str:
+    """Generate CSS based on theme."""
+    if dark_mode:
+        return """
+        <style>
+            /* Dark Mode Theme */
+            :root {
+                --bg-primary: #0e1117;
+                --bg-secondary: #1a1f2e;
+                --bg-card: #1e2433;
+                --text-primary: #fafafa;
+                --text-secondary: #a0aec0;
+                --border-color: #2d3748;
+                --accent: #667eea;
+                --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+            
+            /* Main container */
+            .main {
+                padding: 0rem 1rem;
+            }
+            
+            /* Header styling */
+            .dashboard-header {
+                background: var(--accent-gradient);
+                padding: 2rem;
+                border-radius: 15px;
+                color: white;
+                margin-bottom: 2rem;
+                box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+            }
+            
+            .dashboard-header h1 {
+                margin: 0;
+                font-size: 2.5rem;
+                font-weight: 700;
+            }
+            
+            .dashboard-header p {
+                margin: 0.5rem 0 0 0;
+                opacity: 0.9;
+                font-size: 1.1rem;
+            }
+            
+            /* Section headers - Dark */
+            .section-header {
+                font-size: 1.5rem;
+                font-weight: 600;
+                color: #e2e8f0;
+                margin: 2rem 0 1rem 0;
+                padding-bottom: 0.5rem;
+                border-bottom: 2px solid #667eea;
+            }
+            
+            /* Report cards - Dark */
+            .report-card {
+                background: #1e2433;
+                padding: 1.2rem;
+                border-radius: 10px;
+                box-shadow: 0 2px 15px rgba(0,0,0,0.3);
+                margin-bottom: 1rem;
+                border: 1px solid #2d3748;
+                color: #e2e8f0;
+            }
+            
+            .report-card:hover {
+                box-shadow: 0 4px 25px rgba(102, 126, 234, 0.2);
+                border-color: #667eea;
+            }
+            
+            .report-card strong {
+                color: #fafafa;
+            }
+            
+            .report-card div {
+                color: #a0aec0;
+            }
+            
+            /* Status badges - Dark */
+            .badge {
+                display: inline-block;
+                padding: 0.25rem 0.75rem;
+                border-radius: 20px;
+                font-size: 0.8rem;
+                font-weight: 600;
+            }
+            
+            .badge-critical { background: #742a2a; color: #feb2b2; }
+            .badge-high { background: #744210; color: #fbd38d; }
+            .badge-medium { background: #2a4365; color: #90cdf4; }
+            .badge-low { background: #22543d; color: #9ae6b4; }
+            .badge-pass { background: #22543d; color: #9ae6b4; }
+            .badge-fail { background: #742a2a; color: #feb2b2; }
+            
+            /* Hide Streamlit branding */
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            
+            /* Data source indicator - Dark */
+            .data-source-live {
+                background: #22543d;
+                color: #9ae6b4;
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+                font-weight: 600;
+                text-align: center;
+            }
+            
+            .data-source-demo {
+                background: #744210;
+                color: #fbd38d;
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+                font-weight: 600;
+                text-align: center;
+            }
+            
+            /* Theme toggle button */
+            .theme-toggle {
+                background: #2d3748;
+                color: #fafafa;
+                border: 1px solid #4a5568;
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+                cursor: pointer;
+                width: 100%;
+                text-align: center;
+                font-weight: 600;
+                transition: all 0.2s;
+            }
+            
+            .theme-toggle:hover {
+                background: #4a5568;
+                border-color: #667eea;
+            }
+        </style>
+        """
+    else:
+        return """
+        <style>
+            /* Light Mode Theme */
+            :root {
+                --bg-primary: #ffffff;
+                --bg-secondary: #f8f9fa;
+                --bg-card: #ffffff;
+                --text-primary: #2c3e50;
+                --text-secondary: #666666;
+                --border-color: #eee;
+                --accent: #667eea;
+                --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+            
+            /* Main container */
+            .main {
+                padding: 0rem 1rem;
+            }
+            
+            /* Header styling */
+            .dashboard-header {
+                background: var(--accent-gradient);
+                padding: 2rem;
+                border-radius: 15px;
+                color: white;
+                margin-bottom: 2rem;
+                box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+            }
+            
+            .dashboard-header h1 {
+                margin: 0;
+                font-size: 2.5rem;
+                font-weight: 700;
+            }
+            
+            .dashboard-header p {
+                margin: 0.5rem 0 0 0;
+                opacity: 0.9;
+                font-size: 1.1rem;
+            }
+            
+            /* Section headers - Light */
+            .section-header {
+                font-size: 1.5rem;
+                font-weight: 600;
+                color: #2c3e50;
+                margin: 2rem 0 1rem 0;
+                padding-bottom: 0.5rem;
+                border-bottom: 2px solid #667eea;
+            }
+            
+            /* Report cards - Light */
+            .report-card {
+                background: white;
+                padding: 1.2rem;
+                border-radius: 10px;
+                box-shadow: 0 2px 15px rgba(0,0,0,0.06);
+                margin-bottom: 1rem;
+                border: 1px solid #eee;
+            }
+            
+            .report-card:hover {
+                box-shadow: 0 4px 25px rgba(0,0,0,0.1);
+            }
+            
+            /* Status badges - Light */
+            .badge {
+                display: inline-block;
+                padding: 0.25rem 0.75rem;
+                border-radius: 20px;
+                font-size: 0.8rem;
+                font-weight: 600;
+            }
+            
+            .badge-critical { background: #ffebee; color: #c62828; }
+            .badge-high { background: #fff3e0; color: #ef6c00; }
+            .badge-medium { background: #e3f2fd; color: #1565c0; }
+            .badge-low { background: #e8f5e9; color: #2e7d32; }
+            .badge-pass { background: #e8f5e9; color: #2e7d32; }
+            .badge-fail { background: #ffebee; color: #c62828; }
+            
+            /* Hide Streamlit branding */
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            
+            /* Data source indicator - Light */
+            .data-source-live {
+                background: #e8f5e9;
+                color: #2e7d32;
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+                font-weight: 600;
+                text-align: center;
+            }
+            
+            .data-source-demo {
+                background: #fff3e0;
+                color: #ef6c00;
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+                font-weight: 600;
+                text-align: center;
+            }
+            
+            /* Theme toggle button */
+            .theme-toggle {
+                background: #f8f9fa;
+                color: #2c3e50;
+                border: 1px solid #dee2e6;
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+                cursor: pointer;
+                width: 100%;
+                text-align: center;
+                font-weight: 600;
+                transition: all 0.2s;
+            }
+            
+            .theme-toggle:hover {
+                background: #e9ecef;
+                border-color: #667eea;
+            }
+        </style>
+        """
+
+# Apply theme CSS
+st.markdown(get_theme_css(st.session_state.dark_mode), unsafe_allow_html=True)
 
 
 # =============================================================================
@@ -173,6 +324,20 @@ data_loader = init_data_loader()
 with st.sidebar:
     st.image("https://about.gitlab.com/images/press/logo/png/gitlab-logo-500.png", width=150)
     st.markdown("### 🛡️ ComplianceBot")
+    st.markdown("---")
+    
+    # Theme Toggle
+    st.markdown("#### 🎨 Theme")
+    theme_col1, theme_col2 = st.columns(2)
+    with theme_col1:
+        if st.button("☀️ Light", use_container_width=True, type="secondary" if st.session_state.dark_mode else "primary"):
+            st.session_state.dark_mode = False
+            st.rerun()
+    with theme_col2:
+        if st.button("🌙 Dark", use_container_width=True, type="primary" if st.session_state.dark_mode else "secondary"):
+            st.session_state.dark_mode = True
+            st.rerun()
+    
     st.markdown("---")
     
     # Data Source Status (Auto-detected!)
@@ -198,10 +363,13 @@ with st.sidebar:
     # Filters
     st.markdown("#### 🔍 Filters")
     
+    # Get projects dynamically (from BigQuery in live mode, mock in demo)
+    available_projects = data_loader.get_projects()
+    
     selected_projects = st.multiselect(
         "Projects",
-        ['frontend-app', 'backend-api', 'data-service', 'auth-service'],
-        default=['frontend-app', 'backend-api', 'data-service', 'auth-service']
+        available_projects,
+        default=available_projects
     )
     
     selected_frameworks = st.multiselect(
@@ -349,20 +517,23 @@ with chart_col1:
         daily_scores = df_filtered.groupby(df_filtered['date'].dt.date)['compliance_score'].mean().reset_index()
         daily_scores.columns = ['date', 'score']
         
+        # Use dark or light template based on theme
+        chart_template = 'plotly_dark' if st.session_state.dark_mode else 'plotly_white'
+        
         fig_trend = px.line(
             daily_scores,
             x='date',
             y='score',
             title='Compliance Score Over Time',
             labels={'date': 'Date', 'score': 'Average Score'},
-            template='plotly_white'
+            template=chart_template
         )
         fig_trend.update_traces(
             line=dict(color='#667eea', width=3),
             fill='tozeroy',
-            fillcolor='rgba(102, 126, 234, 0.1)'
+            fillcolor='rgba(102, 126, 234, 0.2)' if st.session_state.dark_mode else 'rgba(102, 126, 234, 0.1)'
         )
-        fig_trend.add_hline(y=85, line_dash="dash", line_color="green", annotation_text="Pass Threshold (85)")
+        fig_trend.add_hline(y=85, line_dash="dash", line_color="#48bb78", annotation_text="Pass Threshold (85)")
         fig_trend.update_layout(height=350)
         st.plotly_chart(fig_trend, use_container_width=True)
     else:
@@ -375,6 +546,7 @@ with chart_col2:
         severity_counts.columns = ['severity', 'count']
         
         colors = {'critical': '#e74c3c', 'high': '#f39c12', 'medium': '#3498db', 'low': '#27ae60'}
+        chart_template = 'plotly_dark' if st.session_state.dark_mode else 'plotly_white'
         
         fig_severity = px.pie(
             severity_counts,
@@ -383,7 +555,8 @@ with chart_col2:
             title='Findings by Severity',
             color='severity',
             color_discrete_map=colors,
-            hole=0.4
+            hole=0.4,
+            template=chart_template
         )
         fig_severity.update_layout(height=350)
         st.plotly_chart(fig_severity, use_container_width=True)
@@ -400,6 +573,8 @@ with chart_col3:
         framework_counts = df_filtered['framework'].value_counts().reset_index()
         framework_counts.columns = ['framework', 'count']
         
+        chart_template = 'plotly_dark' if st.session_state.dark_mode else 'plotly_white'
+        
         fig_framework = px.bar(
             framework_counts,
             x='framework',
@@ -407,7 +582,7 @@ with chart_col3:
             title='Findings by Framework',
             color='framework',
             color_discrete_sequence=px.colors.qualitative.Set2,
-            template='plotly_white'
+            template=chart_template
         )
         fig_framework.update_layout(height=350, showlegend=False)
         st.plotly_chart(fig_framework, use_container_width=True)
@@ -423,6 +598,8 @@ with chart_col4:
         }).reset_index()
         project_counts.columns = ['project', 'avg_score', 'findings']
         
+        chart_template = 'plotly_dark' if st.session_state.dark_mode else 'plotly_white'
+        
         fig_project = px.bar(
             project_counts,
             x='project',
@@ -430,9 +607,9 @@ with chart_col4:
             title='Average Compliance Score by Project',
             color='avg_score',
             color_continuous_scale='RdYlGn',
-            template='plotly_white'
+            template=chart_template
         )
-        fig_project.add_hline(y=85, line_dash="dash", line_color="green")
+        fig_project.add_hline(y=85, line_dash="dash", line_color="#48bb78")
         fig_project.update_layout(height=350)
         st.plotly_chart(fig_project, use_container_width=True)
     else:
@@ -445,10 +622,11 @@ with chart_col4:
 
 st.markdown('<div class="section-header">📄 Compliance Reports</div>', unsafe_allow_html=True)
 
-# Filter reports
+# Filter reports - use projects from reports or available projects
+report_projects = list(set([r['project'] for r in reports])) if reports else available_projects
 report_project_filter = st.selectbox(
     "Filter by Project",
-    ['All Projects'] + list(set([r['project'] for r in reports])),
+    ['All Projects'] + report_projects,
     key='report_filter'
 )
 
