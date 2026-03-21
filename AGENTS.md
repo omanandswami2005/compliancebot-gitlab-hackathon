@@ -1,109 +1,182 @@
-# ComplianceBot Flow — Agent Instructions
+# ComplianceBot Flow - Agent Instructions
 
-## Context
-This project uses ComplianceBot Flow to automatically analyze merge requests
-and CI/CD pipelines for compliance with SOC 2, ISO 27001, PCI-DSS, and HIPAA.
+## Overview
 
-All agents **only use official GitLab tools** listed in the [Official Tools Reference](docs/OFFICIAL_TOOLS_REFERENCE.md).
+ComplianceBot is a multi-agent compliance flow that automatically analyzes merge requests for security and compliance issues. It maps findings to SOC 2, ISO 27001, PCI-DSS, and HIPAA controls, then generates audit-ready reports.
 
-## Architecture
-ComplianceBot integrates with:
-- **GitLab AI Catalog** — Agent publishing and flow management per official schema
-- **Google Cloud Vertex AI** — AI model for compliance narrative generation (Gemini-2.5-flash)
-- **Google Cloud BigQuery** — Evidence archival and compliance analytics
-- **Google Cloud Storage** — Long-term evidence retention with 1-year SOC 2 compliance
+## How It Works
 
-## Agent Structure & Format
-
-All agents are defined in `agents/` directory at repository root, following the official GitLab AI Catalog YAML schema:
-
-```yaml
-name: agent-name                    # Required: 3-255 characters
-description: "What this agent does" # Required: max 1024 characters
-public: true                        # Optional: boolean (default true)
-system_prompt: |                    # Required
-  Detailed system instructions for agent behavior
-tools:                              # Optional (only official GitLab tools)
-  - tool1
-  - tool2
+```
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│   Scanner    │───▶│    Mapper    │───▶│   Evidence   │───▶│   Reporter   │
+│    Agent     │    │    Agent     │    │  Collector   │    │    Agent     │
+└──────────────┘    └──────────────┘    └──────────────┘    └──────────────┘
+      │                   │                   │                   │
+ Read MR diffs      Map to SOC2         Gather audit        Post comment
+ Find issues        ISO27001            evidence            Create issues
+                    PCI-DSS
+                    HIPAA
 ```
 
-## Agent Behavior Guidelines
+## Triggering the Flow
 
-### ComplianceBot Scanner (`agents/compliance-scanner.yml`)
-- **Purpose**: Analyze MRs and pipelines for compliance signals
-- **Input**: Merge request diffs, pipeline results, vulnerability reports
-- **Output**: JSON findings with severity, control IDs, remediation steps
-- **Official Tools**: `read_file`, `read_files`
-- **Behavior**:
-  - Always include file paths in findings
-  - Map every finding to at least one control ID (SOC2-CC6.1, ISO27001-A.8.2.3, etc.)
-  - Never report informational findings for boilerplate files (README, CHANGELOG)
-  - Treat dependency lock file changes as informational only unless CVEs are detected
-  - Detect: Auth changes, encryption configs, dependency vulnerabilities, SAST findings
+On any merge request, use one of these methods:
 
-### ComplianceBot Mapper (`agents/compliance-mapper.yml`)
-- **Purpose**: Map findings to compliance framework controls
-- **Input**: Finding list, compliance frameworks
-- **Output**: Control mappings, risk assessment, compliance score (0-100)
-- **Official Tools**: `read_file`, `get_vulnerability_details`, `list_vulnerabilities`, `get_issue`, `get_repository_file`, `gitlab_blob_search`
-- **Behavior**:
-  - Primary framework: SOC 2 (always include)
-  - Secondary frameworks: ISO 27001 (always), PCI-DSS (if payment-related code detected), HIPAA (if health data detected)
-  - Use NIST SP 800-53 as supplemental reference
-  - Score 0-100 where 100 = fully audit-ready
-  - Assess business risk and remediation priority
+1. **Mention**: `@ai-compliance-bot-flow-gitlab-ai-hackathon analyze this MR`
+2. **Assign**: Assign the flow as a reviewer
+3. **Assign reviewer**: Add the flow as a reviewer
 
-### ComplianceBot Evidence Collector (`agents/evidence-collector.yml`)
-- **Purpose**: Gather audit trail evidence from GitLab activity
-- **Input**: Project context, mapped controls
-- **Output**: Evidence package with SHA-256 hashes, archived to BigQuery
-- **Official Tools**: `read_file`, `get_repository_file`, `list_project_audit_events`, `list_group_audit_events`, `gitlab_api_get`, `gitlab_graphql`
-- **Behavior**:
-  - Evidence collection period: Last 14 days (default), 30 days for scheduled audits
-  - Collect: MR metadata, pipeline results, access logs, code reviews
-  - Always include SHA-256 hash of evidence for non-repudiation
-  - Maximum 500 MR records per collection run
-  - Archive to BigQuery with 1-year SOC 2 retention policy
+## Agent Definitions
 
-### ComplianceBot Reporter (`agents/compliance-reporter.yml`)
-- **Purpose**: Generate audit-ready compliance reports
-- **Input**: Evidence package, control mappings
-- **Output**: Executive summary, PDF report, GitLab issues, MR comments
-- **Official Tools**: `read_file`, `create_issue`, `create_issue_note`, `get_issue`, `list_issues`
-- **Behavior**:
-  - Tone: Professional, auditor-friendly
-  - Executive summary: Max 3 sentences, always includes compliance score (0-100)
-  - Include remediation timeline estimates (days to compliance)
-  - Post MR comment only if score < 85 (avoid alert fatigue)
-  - Generate audit-ready PDFs with evidence hashes and timestamps
-  - Use Vertex AI (Gemini-2.5-flash) for narrative generation
+All agents are in the `agents/` directory:
 
-## Custom Compliance Controls
-This project adds these org-specific controls:
-- ORG-001: All production deployments require change ticket reference in MR description
-- ORG-002: Database migrations require DBA approval (label: 'db-migration')
-- ORG-003: Dependencies upgraded within 30 days of critical CVE disclosure
+### 1. Scanner Agent (`compliance-scanner.yml`)
 
-## Google Cloud Integration
+**Purpose**: Scans MR diffs for compliance-relevant code changes
 
-### Evidence Flow
-1. **ComplianceScanner** → Detects findings from MR/pipeline
-2. **ComplianceMapper** → Maps findings to control IDs
-3. **EvidenceCollector** → Gathers audit trail and approvals
-4. **ComplianceReporter** → Uses Vertex AI to generate narrative, logs to BigQuery, uploads PDF to GCS
+**Detects**:
+- Hardcoded secrets (API keys, passwords, private keys)
+- Weak encryption (MD5, SHA1, disabled SSL)
+- Authentication issues (SQL injection, weak sessions)
+- Dependency vulnerabilities (known CVEs)
+- Configuration problems (debug mode, permissive CORS)
+- Process violations (missing change tickets)
 
-### GCP Services Used
-- **Vertex AI (Gemini-2.5-flash)** — Generates compliance narratives (no separate API key needed)
-- **BigQuery** — Stores compliance findings for historical analysis
-- **Cloud Storage** — Archives evidence PDFs with 1-year retention (SOC 2)
-- **Cloud Run** — Hosts report generator microservice
+**Output**: JSON findings with severity and control IDs
 
-### Configuration
-Set these environment variables for GCP integration:
-- `GCP_PROJECT_ID` — Your Google Cloud project ID
-- `GCP_SERVICE_ACCOUNT_KEY` — Service account JSON key (base64 encoded)
-- `BIGQUERY_DATASET` — BigQuery dataset name (default: `compliance`)
-- `GCS_BUCKET` — GCS bucket name (default: `compliance-evidence-${GCP_PROJECT_ID}`)
+### 2. Mapper Agent (`compliance-mapper.yml`)
 
-See `docs/configuration.md` for detailed GCP setup instructions.
+**Purpose**: Maps findings to compliance framework controls
+
+**Frameworks**:
+- SOC 2 (CC6.1-CC8.1)
+- ISO 27001 (A.8-A.12)
+- PCI-DSS (Req 6, 8, 10)
+- HIPAA (§164.312)
+- Custom (ORG-001, ORG-002, ORG-003)
+
+**Scoring**:
+- Start at 100 points
+- Critical: -25 points
+- High: -15 points
+- Medium: -10 points
+- Low: -5 points
+
+### 3. Evidence Collector Agent (`evidence-collector.yml`)
+
+**Purpose**: Gathers audit trail evidence
+
+**Collects**:
+- MR metadata (author, reviewers, approvers)
+- Commit history with timestamps
+- Review comments and discussions
+- Pipeline execution results
+
+**Security**: SHA-256 hashing for non-repudiation
+
+### 4. Reporter Agent (`compliance-reporter.yml`)
+
+**Purpose**: Generates reports and creates issues
+
+**Actions**:
+- Posts compliance comment on MR (if score < 85)
+- Creates GitLab issues for findings (severity >= medium)
+- Includes remediation steps and timelines
+
+## Custom Controls
+
+| Control | Description | Trigger |
+|---------|-------------|---------|
+| ORG-001 | Change ticket required | MR description missing ticket reference |
+| ORG-002 | DBA approval required | Database migration without `db-migration` label |
+| ORG-003 | CVE patching SLA | Dependencies not updated within 30 days of CVE |
+
+## Behavior Guidelines
+
+### Scanner
+- Always include file paths in findings
+- Map every finding to at least one control ID
+- Ignore boilerplate files (README, CHANGELOG)
+- Treat lock file changes as informational unless CVEs detected
+
+### Mapper
+- Always include SOC 2 and ISO 27001
+- Add PCI-DSS only if payment code detected
+- Add HIPAA only if health data detected
+- Score 0-100 where 100 = audit-ready
+
+### Evidence Collector
+- Default collection: Last 14 days
+- Scheduled audits: Last 30 days
+- Maximum 500 MRs per collection
+- Always include evidence hash
+
+### Reporter
+- Professional, auditor-friendly tone
+- Executive summary: Max 3 sentences
+- Post MR comment only if score < 85
+- Create issues for severity >= medium
+
+## GCP Integration (Optional)
+
+When GCP credentials are configured:
+
+| Service | Purpose |
+|---------|---------|
+| **Vertex AI** | AI-powered compliance narratives |
+| **BigQuery** | Historical analytics and trends |
+| **Cloud Storage** | PDF reports with 1-year retention |
+
+Without GCP, the flow still works but skips archival features.
+
+## Environment Variables
+
+```bash
+# Required for GCP (optional)
+GCP_PROJECT_ID=your-project-id
+GCP_SERVICE_ACCOUNT_KEY=base64-encoded-key
+
+# Optional
+BIGQUERY_DATASET=compliance
+GCS_BUCKET=compliance-evidence-{project}
+```
+
+## Flow Configuration
+
+The flow is defined in `flows/compliance-flow.yml`:
+
+```yaml
+name: "ComplianceBot Flow"
+description: "Multi-agent compliance analysis flow"
+
+definition:
+  version: "v1"
+  environment: ambient
+  
+  components:
+    - name: "scanner"
+      type: AgentComponent
+      # ... scans MR for issues
+      
+    - name: "mapper"  
+      type: AgentComponent
+      # ... maps to compliance controls
+      
+    - name: "evidence_collector"
+      type: AgentComponent
+      # ... gathers audit evidence
+      
+    - name: "reporter"
+      type: AgentComponent
+      # ... posts reports and creates issues
+```
+
+## Testing
+
+Test the flow on MR !10 which contains intentional violations:
+- Hardcoded secrets
+- Weak encryption
+- SQL injection
+- Outdated dependencies
+
+Expected result: Score ~0/100, 20+ issues created.

@@ -1,268 +1,248 @@
-# ComplianceBot Flow
+# 🛡️ ComplianceBot Flow
 
-An AI-powered multi-agent compliance flow built on the GitLab Duo Agent Platform that monitors merge requests, maps findings to compliance controls, and generates audit-ready evidence packages.
+> **Your compliance auditor lives in GitLab now.**
 
-## Architecture
+An AI-powered multi-agent compliance flow built on the GitLab Duo Agent Platform. Automatically scans merge requests for compliance violations, maps findings to SOC 2/ISO 27001/PCI-DSS controls, and generates audit-ready reports.
+
+[![GitLab AI Hackathon 2026](https://img.shields.io/badge/GitLab%20AI%20Hackathon-2026-orange)](https://gitlab.devpost.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Latest Release](https://img.shields.io/badge/release-v1.2.0-green)](https://gitlab.com/gitlab-ai-hackathon/participants/35481656/-/tags)
+
+## 🎯 What It Does
+
+| Before ComplianceBot | After ComplianceBot |
+|---------------------|---------------------|
+| Manual code review for security issues | Automatic scanning on every MR |
+| Spreadsheets tracking compliance controls | Real-time control mapping |
+| Weeks of audit evidence gathering | Instant evidence packages |
+| 200-400 hours per SOC 2 audit | Minutes per compliance check |
+
+## ✅ Live Demo Results
+
+**Test MR [!10](https://gitlab.com/gitlab-ai-hackathon/participants/35481656/-/merge_requests/10)** with intentional violations:
+
+- **20+ Issues Created** automatically ([#5](https://gitlab.com/gitlab-ai-hackathon/participants/35481656/-/work_items/5) - [#24](https://gitlab.com/gitlab-ai-hackathon/participants/35481656/-/work_items/24))
+- **Compliance Score**: 0/100 (intentionally failing)
+- **Findings**: 4 Critical, 10 High, 10 Medium severity
+- **Controls Mapped**: SOC2-CC6.1, ISO27001-A.10.1.1, PCI-DSS-3.5.3, etc.
+
+## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│              GitLab Duo Agent Platform               │
-│                                                     │
-│  ┌──────────────┐    ┌──────────────────────────┐   │
-│  │   Triggers   │───▶│     ComplianceBot Flow   │   │
-│  │              │    │                          │   │
-│  │ • MR Created │    │  ┌────────────────────┐  │   │
-│  │ • Pipeline   │    │  │ 1. Scanner Agent   │  │   │
-│  │   Completed  │    │  │   (MR Analysis)    │  │   │
-│  │ • Schedule   │    │  └────────┬───────────┘  │   │
-│  │   (Nightly)  │    │           │              │   │
-│  │ • Manual     │    │  ┌────────▼───────────┐  │   │
-│  │   Trigger    │    │  │ 2. Mapper Agent    │  │   │
-│  └──────────────┘    │  │ (Control Mapping)  │  │   │
-│                      │  └────────┬───────────┘  │   │
-│                      │           │              │   │
-│                      │  ┌────────▼───────────┐  │   │
-│                      │  │ 3. Evidence Agent  │  │   │
-│                      │  │ (Evidence Collect) │  │   │
-│                      │  └────────┬───────────┘  │   │
-│                      │           │              │   │
-│                      │  ┌────────▼───────────┐  │   │
-│                      │  │ 4. Reporter Agent  │  │   │
-│                      │  │  (Report Generate) │  │   │
-│                      │  └────────────────────┘  │   │
-│                      └──────────────────────────┘   │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                   GitLab Duo Agent Platform                      │
+│                                                                  │
+│  Trigger: @mention, assign, or assign reviewer on MR            │
+│                         │                                        │
+│                         ▼                                        │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                 ComplianceBot Flow                          ││
+│  │                                                             ││
+│  │  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐ ││
+│  │  │ Scanner  │──▶│  Mapper  │──▶│ Evidence │──▶│ Reporter │ ││
+│  │  │  Agent   │   │  Agent   │   │ Collector│   │  Agent   │ ││
+│  │  └──────────┘   └──────────┘   └──────────┘   └──────────┘ ││
+│  │       │              │              │              │        ││
+│  │  Read MR diffs  Map to SOC2   Gather audit    Post MR      ││
+│  │  Find issues    ISO27001      evidence        comment      ││
+│  │                 PCI-DSS                       Create       ││
+│  │                 HIPAA                         issues       ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                                                                  │
+└──────────────────────────────┬───────────────────────────────────┘
+                               │
+                               ▼ (Optional GCP Integration)
+              ┌────────────────────────────────────┐
+              │         Google Cloud Platform       │
+              │                                     │
+              │  BigQuery ─── Compliance Analytics  │
+              │  Cloud Storage ─── PDF Reports      │
+              │  Vertex AI ─── AI Narratives        │
+              └────────────────────────────────────┘
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
-### Prerequisites
-- GitLab account with Duo Agent Platform access
-- Google Cloud project with billing enabled
-- GitLab PAT token (with `api`, `read_api`, `write_repository` scopes)
-- VS Code with [GitLab PAT extension](https://marketplace.visualstudio.com/items?itemName=GitLab.gitlab-workflow)
+### 1. Trigger the Flow
 
-### 1. Configure Google Cloud
+On any merge request, mention the flow:
+```
+@ai-compliance-bot-flow-gitlab-ai-hackathon Please analyze this MR for compliance issues.
+```
 
-Set these environment variables or in your GitLab CI/CD settings:
+Or assign the flow as a reviewer.
+
+### 2. View Results
+
+- **MR Comment**: Compliance score badge with findings table
+- **Issues**: Auto-created for each finding (severity >= medium)
+- **Session Log**: Automate → Sessions → View agent reasoning
+
+## 📊 What Gets Detected
+
+| Category | Examples | Severity |
+|----------|----------|----------|
+| **Secrets** | API keys, passwords, private keys in code | Critical |
+| **Encryption** | MD5/SHA1 hashing, disabled SSL, weak ciphers | Critical/High |
+| **Authentication** | SQL injection, weak sessions, no MFA | High |
+| **Dependencies** | Known CVEs in packages | High |
+| **Configuration** | Debug mode, permissive CORS, weak passwords | Medium |
+| **Process** | Missing change tickets, no DBA approval | Medium |
+
+## 🎯 Compliance Frameworks
+
+| Framework | Controls Covered |
+|-----------|-----------------|
+| **SOC 2** | CC6.1-CC6.8 (Access), CC7.1-CC7.5 (Operations), CC8.1 (Change Mgmt) |
+| **ISO 27001** | A.8 (Asset Mgmt), A.9 (Access), A.10 (Crypto), A.12 (Operations) |
+| **PCI-DSS** | Req 6 (Secure Dev), Req 8 (Auth), Req 10 (Logging) |
+| **HIPAA** | §164.312 Technical Safeguards |
+| **Custom** | ORG-001 (Change Tickets), ORG-002 (DBA Approval), ORG-003 (CVE Patching) |
+
+## 📁 Project Structure
+
+```
+compliancebot/
+├── agents/                     # Agent YAML definitions
+│   ├── compliance-scanner.yml  # Scans MRs for issues
+│   ├── compliance-mapper.yml   # Maps to compliance controls
+│   ├── evidence-collector.yml  # Gathers audit evidence
+│   └── compliance-reporter.yml # Posts reports & creates issues
+│
+├── flows/
+│   └── compliance-flow.yml     # Multi-agent orchestration
+│
+├── src/
+│   ├── agents/                 # Python implementations
+│   ├── frameworks/             # Control definitions (JSON)
+│   ├── gcp/                    # GCP integration module
+│   │   ├── client.py           # Authentication & config
+│   │   ├── bigquery.py         # Findings analytics
+│   │   ├── storage.py          # PDF/evidence archival
+│   │   ├── vertex_ai.py        # AI narrative generation
+│   │   └── integration.py      # Main orchestrator
+│   ├── templates/              # Report templates
+│   └── utils/                  # Helpers
+│
+├── cloud/
+│   ├── cloud_run/              # Report generator service
+│   ├── terraform/              # GCP infrastructure
+│   └── bigquery_schema.sql     # Analytics tables
+│
+├── scripts/
+│   ├── gcp_setup.sh            # Automated GCP setup
+│   └── diagnostic.sh           # Troubleshooting
+│
+├── tests/                      # Unit tests
+├── docs/                       # Documentation
+└── skills/                     # Duo skills (slash commands)
+```
+
+## ☁️ GCP Integration (Optional)
+
+GCP integration provides additional features but is **not required** for the main flow to work.
+
+| Service | Purpose | Required? |
+|---------|---------|-----------|
+| **Vertex AI** | AI-powered compliance narratives | Optional |
+| **BigQuery** | Historical analytics & trends | Optional |
+| **Cloud Storage** | PDF reports with 1-year retention | Optional |
+
+### Setup GCP (One Command)
+
 ```bash
-export GCP_PROJECT_ID="your-project-id"
-export GCP_SERVICE_ACCOUNT_KEY="your-service-account-key-base64"
-export BIGQUERY_DATASET="compliance"  # default
-export GCS_BUCKET="compliance-evidence-${GCP_PROJECT_ID}"
+# Requires: gcloud CLI installed and authenticated
+./scripts/gcp_setup.sh
+
+# Or with existing project
+./scripts/gcp_setup.sh your-project-id
 ```
 
-See [GCP Configuration Guide](docs/configuration.md) for detailed setup.
+The script will:
+1. Create/configure GCP project
+2. Enable required APIs
+3. Create service account with permissions
+4. Set up BigQuery dataset and tables
+5. Create GCS bucket with retention policy
+6. Output credentials for GitLab CI/CD
 
-### 2. Deploy Cloud Run Service
+### Add to GitLab CI/CD Variables
 
-No Docker required! Uses Google Cloud Build:
+**Location**: Settings → CI/CD → Variables
+
+| Variable | Value | Protected | Masked |
+|----------|-------|-----------|--------|
+| `GCP_PROJECT_ID` | Your GCP project ID | No | No |
+| `GCP_SERVICE_ACCOUNT_KEY` | Base64-encoded key | Yes | Yes |
+| `BIGQUERY_DATASET` | `compliance` | No | No |
+| `GCS_BUCKET` | `compliance-evidence-{project}` | No | No |
+
+### Graceful Degradation
+
+If GCP is not configured:
+- ✅ Flow still scans MRs
+- ✅ Issues still created
+- ✅ MR comments still posted
+- ⚠️ BigQuery logging skipped (with warning)
+- ⚠️ PDF archival skipped (with warning)
+- ⚠️ Fallback narrative (no AI enhancement)
+
+## 📖 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [GCP Setup Guide](docs/GCP_SETUP.md) | Complete GCP configuration |
+| [Configuration](docs/configuration.md) | Environment variables |
+| [Publishing Guide](docs/PUBLISHING_GUIDE.md) | How to publish to AI Catalog |
+| [Official Tools](docs/OFFICIAL_TOOLS_REFERENCE.md) | Available GitLab tools |
+| [AGENTS.md](AGENTS.md) | Agent behavior guidelines |
+
+## 🧪 Testing
+
 ```bash
-bash cloud/cloud_run/deploy.sh $GCP_PROJECT_ID
-```
-
-See [Cloud Build Deployment Guide](docs/CLOUD_BUILD_GUIDE.md) for details.
-
-### 3. Publish to AI Catalog
-
-See [Agent Publishing Guide](docs/PUBLISHING_GUIDE.md) for step-by-step instructions on:
-- Setting up GitLab PAT in VS Code
-- Publishing 4 agents to AI Catalog
-- Publishing the compliance flow
-- Hackathon submission checklist
-
-## Technology Stack
-
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **Agent Platform** | GitLab Duo | Agent orchestration and flow management |
-| **AI Model** | Google Vertex AI (Gemini-2.5-flash) | Compliance narrative generation |
-| **Compliance Analytics** | Google BigQuery | Evidence archival and trend analysis |
-| **Evidence Storage** | Google Cloud Storage | 1-year SOC 2 compliant retention |
-| **Reporting** | ReportLab + Flask | PDF generation and MR comments |
-
-## Agents
-
-All agents are ready for publication to the GitLab AI Catalog. They are defined in `agents/` and use GitLab's agent YAML format.
-
-### 1. ComplianceBot Scanner
-**File**: [agents/compliance-scanner.yml](agents/compliance-scanner.yml)
-
-- **Role**: Scans merge requests and pipelines for compliance signals
-- **Input**: MR diffs, pipeline results, vulnerability reports
-- **Detects**: Auth changes, encryption configs, dependency vulnerabilities, SAST findings
-- **Output**: JSON findings with severity, control IDs, remediation steps
-- **Official Tools**: `read_file`, `read_files`
-
-### 2. ComplianceBot Mapper
-**File**: [agents/compliance-mapper.yml](agents/compliance-mapper.yml)
-
-- **Role**: Maps security findings to compliance framework controls
-- **Frameworks**: SOC 2, ISO 27001, PCI-DSS, HIPAA
-- **Output**: Control mappings, risk assessment, compliance score (0-100)
-- **Scoring**: 0-100 scale where 100 = fully audit-ready
-- **Official Tools**: `read_file`, `get_vulnerability_details`, `list_vulnerabilities`, `get_issue`, `get_repository_file`, `gitlab_blob_search`
-
-### 3. ComplianceBot Evidence Collector
-**File**: [agents/evidence-collector.yml](agents/evidence-collector.yml)
-
-- **Role**: Collects and archives audit trail evidence from GitLab activity
-- **Collection Window**: Last 14 days (30 days for scheduled audits), max 500 MRs
-- **Evidence Type**: MR metadata, approvals, pipeline results, access logs
-- **Security**: SHA-256 hashing for non-repudiation
-- **Archive**: BigQuery with 1-year SOC 2 compliance retention
-- **Official Tools**: `read_file`, `get_repository_file`, `list_project_audit_events`, `list_group_audit_events`, `gitlab_api_get`, `gitlab_graphql`
-
-### 4. ComplianceBot Reporter
-**File**: [agents/compliance-reporter.yml](agents/compliance-reporter.yml)
-
-- **Role**: Generates audit-ready compliance reports using Vertex AI
-- **Narrative**: Uses Gemini-2.5-flash for executive summaries
-- **Outputs**: 
-  - GitLab issues (for findings with severity >= medium)
-  - MR comments (only if score < 85)
-  - PDF reports (audit-ready, archived to GCS with 7-day signed URLs)
-- **Timeline**: Includes remediation timeline estimates (days to compliance)
-- **Official Tools**: `read_file`, `create_issue`, `create_issue_note`, `get_issue`, `list_issues`
-
-## Flow
-
-The **ComplianceBot Flow** ([flows/compliance-flow.yml](flows/compliance-flow.yml)) orchestrates all 4 agents in sequence:
-
-**Architecture**:
-```
-Scanner → Mapper → Evidence Collector → Reporter
-```
-
-**Triggers:**
-- ✅ Merge Request (opened or updated)
-- ✅ Pipeline (success or failure on main/production branches)
-- ✅ Schedule (Every Monday at 2 AM UTC)
-- ✅ Manual trigger via Automate → Flows menu
-
-**Flow Components**:
-1. **Scanner**: Analyzes MR/pipeline for compliance signals
-2. **Mapper**: Maps findings to control IDs (SOC2, ISO27001, PCI-DSS, HIPAA)
-3. **Evidence Collector**: Gathers audit evidence (MR approvals, pipeline logs, access records)
-4. **Reporter**: Generates compliance report and posts findings
-
-**Outputs**:
-- **GitLab Issues**: One per finding (with control ID reference)
-- **MR Comments**: Compliance score badge (only if score < 85)
-- **CI/CD Artifacts**: PDF reports stored for 90 days
-- **BigQuery**: Evidence logged for historical trend analysis
-
-## Documentation
-
-| Guide | Purpose |
-|-------|---------|
-| [Configuration](docs/configuration.md) | Environment variables and GCP setup |
-| [Publishing Guide](docs/PUBLISHING_GUIDE.md) | **How to publish agents and flows** |
-| [Cloud Build Guide](docs/CLOUD_BUILD_GUIDE.md) | **Serverless deployment without Docker** |
-| [Official Tools Reference](docs/OFFICIAL_TOOLS_REFERENCE.md) | GitLab tools available to agents |
-| [Testing & Submission](docs/TESTING_AND_SUBMISSION.md) | Testing guide and submission checklist |
-| [Agent Behavior](AGENTS.md) | Agent guidelines and custom controls |
-
-## Testing
-
-Run unit tests:
-```bash
+# Run all tests
 python -m pytest tests/ -v
+
+# Run with coverage
+python -m pytest tests/ --cov=src --cov-report=html
+
+# Test GCP integration (requires credentials)
+python -m src.gcp.cli status
 ```
 
-Test coverage includes:
-- MR analysis and finding detection (17 tests)
-- Compliance control mapping (23 tests)
-- Report generation and PDF formatting (18 tests)
-- Evidence collection and BigQuery integration (27+ tests)
+## 🏆 Hackathon Submission
 
-## Hackathon Submission
+**GitLab AI Hackathon 2026** - Deadline: March 25, 2026 @ 2:00 PM EDT
 
-For GitLab AI Hackathon 2026:
+### Checklist
 
-1. ✅ Create public agents (all 4 ready)
-2. ✅ Create public flow (published to AI Catalog)
-3. ✅ Follow [Publishing Guide](docs/PUBLISHING_GUIDE.md) Section 4-5
-4. 📹 Record 3-minute demo video
-5. 📤 Submit to [gitlab.devpost.com](https://gitlab.devpost.com) before **March 25, 2026 @ 2 PM EDT**
+- [x] Public GitLab repo in hackathon group
+- [x] 4 custom agents published to AI Catalog
+- [x] 1 multi-agent flow published
+- [x] MIT License
+- [x] Working demo (MR !10)
+- [ ] 3-minute demo video
+- [ ] Submit to [gitlab.devpost.com](https://gitlab.devpost.com)
 
-**Latest Release**: `v1.1.0` (March 21, 2026)
+### Prize Targets
 
-See [Publishing Guide Section 7](docs/PUBLISHING_GUIDE.md#7-hackathon-submission-checklist) for complete submission requirements.
+| Prize | Amount | Status |
+|-------|--------|--------|
+| Grand Prize | $15,000 | 🎯 Target |
+| Most Impactful | $5,000 | 🎯 Target |
+| Google Cloud Bonus | $10,000 | ✅ GCP integrated |
+| Anthropic Bonus | $10,000 | ✅ Claude via Duo |
 
-## License
+## 📜 License
 
 MIT License - See [LICENSE](LICENSE) for details.
 
-## Project Structure
+## 🙏 Acknowledgments
 
-```
-agents/                        # Agent definitions (AI Catalog)
-├── compliance-scanner.yml
-├── compliance-mapper.yml
-├── evidence-collector.yml
-├── compliance-reporter.yml
-└── agent.yml
+- GitLab Duo Agent Platform team
+- Google Cloud for Vertex AI
+- Anthropic Claude (via GitLab)
 
-flows/                         # Flow orchestration
-├── compliance-flow.yml        # Multi-agent compliance flow
-└── flow.yml.template
+---
 
-src/
-├── agents/                    # Python implementations
-│   ├── scanner.py
-│   ├── mapper.py
-│   ├── evidence_collector.py
-│   └── reporter.py
-├── frameworks/                # Control definitions
-│   ├── soc2_controls.json
-│   ├── iso27001_controls.json
-│   ├── pci_dss_controls.json
-│   └── hipaa_controls.json
-├── templates/                 # Report templates
-│   ├── compliance_report.md.j2
-│   └── mr_comment_badge.md.j2
-└── utils/
-    ├── gitlab_api.py
-    └── evidence_builder.py
-
-cloud/
-├── cloud_run/
-│   ├── report_generator.py    # Flask service (Vertex AI)
-│   ├── Dockerfile
-│   ├── deploy.sh
-│   └── requirements.txt
-├── terraform/
-│   └── main.tf                # GCP infrastructure
-└── bigquery_schema.sql        # Evidence table schema
-
-skills/                        # Duo skills
-├── compliance-scan/
-└── report-generator/
-
-scripts/
-└── diagnostic.sh
-
-docs/
-├── configuration.md
-├── PUBLISHING_GUIDE.md        # ⭐ Hackathon publishing guide
-├── CLOUD_BUILD_GUIDE.md       # ⭐ Deployment guide
-├── OFFICIAL_TOOLS_REFERENCE.md
-└── TESTING_AND_SUBMISSION.md
-
-tests/
-├── test_scanner.py
-├── test_mapper.py
-├── test_reporter.py
-├── test_evidence.py
-└── fixtures/
-    └── sample_mr_diff.json
-```
-
-## Support
-
-For issues or questions:
-1. Check [AGENTS.md](AGENTS.md) for agent behavior guidelines
-2. Review [configuration.md](docs/configuration.md) for GCP setup
-3. See [CLOUD_BUILD_GUIDE.md](docs/CLOUD_BUILD_GUIDE.md) for deployment
-4. Check `tests/fixtures/` for example MR payloads
+**Built for GitLab AI Hackathon 2026** | [View on GitLab](https://gitlab.com/gitlab-ai-hackathon/participants/35481656)
