@@ -1,0 +1,6 @@
+# ComplianceBot Dashboard Dependencies
+streamlit>=1.31.0
+pandas>=2.0.0
+plotly>=5.18.0
+google-cloud-bigquery>=3.11.0
+google-cloud-storage>=2.10.0
