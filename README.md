@@ -156,11 +156,11 @@ Scanner → Mapper → Evidence Collector → Reporter
 
 | Guide | Purpose |
 |-------|---------|
-| [Installation](docs/installation.md) | Project setup and dependencies |
 | [Configuration](docs/configuration.md) | Environment variables and GCP setup |
-| [Compliance Frameworks](docs/compliance-frameworks.md) | SOC 2, ISO 27001, PCI-DSS, HIPAA details |
 | [Publishing Guide](docs/PUBLISHING_GUIDE.md) | **How to publish agents and flows** |
 | [Cloud Build Guide](docs/CLOUD_BUILD_GUIDE.md) | **Serverless deployment without Docker** |
+| [Official Tools Reference](docs/OFFICIAL_TOOLS_REFERENCE.md) | GitLab tools available to agents |
+| [Testing & Submission](docs/TESTING_AND_SUBMISSION.md) | Testing guide and submission checklist |
 | [Agent Behavior](AGENTS.md) | Agent guidelines and custom controls |
 
 ## Testing
@@ -197,14 +197,16 @@ MIT License - See [LICENSE](LICENSE) for details.
 ## Project Structure
 
 ```
-.gitlab/
-├── agents/                    # 4 custom agents
-│   ├── compliance-scanner.yaml
-│   ├── compliance-mapper.yaml
-│   ├── evidence-collector.yaml
-│   └── compliance-reporter.yaml
-└── flows/
-    └── compliance-flow.yaml   # Multi-agent orchestration
+agents/                        # Agent definitions (AI Catalog)
+├── compliance-scanner.yml
+├── compliance-mapper.yml
+├── evidence-collector.yml
+├── compliance-reporter.yml
+└── agent.yml
+
+flows/                         # Flow orchestration
+├── compliance-flow.yml        # Multi-agent compliance flow
+└── flow.yml.template
 
 src/
 ├── agents/                    # Python implementations
@@ -226,22 +228,29 @@ src/
 
 cloud/
 ├── cloud_run/
-│   ├── report_generator.py    # Flask service (uses Vertex AI)
+│   ├── report_generator.py    # Flask service (Vertex AI)
 │   ├── Dockerfile
-│   └── deploy.sh              # Cloud Build deployment
+│   ├── deploy.sh
+│   └── requirements.txt
 ├── terraform/
 │   └── main.tf                # GCP infrastructure
 └── bigquery_schema.sql        # Evidence table schema
 
-docs/
-├── installation.md
-├── configuration.md
-├── compliance-frameworks.md
-├── PUBLISHING_GUIDE.md         # ⭐ START HERE for hackathon
-├── CLOUD_BUILD_GUIDE.md        # ⭐ For deployment
-└── ...
+skills/                        # Duo skills
+├── compliance-scan/
+└── report-generator/
 
-tests/                         # 67+ unit tests
+scripts/
+└── diagnostic.sh
+
+docs/
+├── configuration.md
+├── PUBLISHING_GUIDE.md        # ⭐ Hackathon publishing guide
+├── CLOUD_BUILD_GUIDE.md       # ⭐ Deployment guide
+├── OFFICIAL_TOOLS_REFERENCE.md
+└── TESTING_AND_SUBMISSION.md
+
+tests/
 ├── test_scanner.py
 ├── test_mapper.py
 ├── test_reporter.py
@@ -254,6 +263,6 @@ tests/                         # 67+ unit tests
 
 For issues or questions:
 1. Check [AGENTS.md](AGENTS.md) for agent behavior guidelines
-2. Review [configuration.md](docs/configuration.md) for GCP setup errors
-3. See [CLOUD_BUILD_GUIDE.md](docs/CLOUD_BUILD_GUIDE.md) for deployment issues
-4. Check test fixtures in `tests/fixtures/` for example MR payloads
+2. Review [configuration.md](docs/configuration.md) for GCP setup
+3. See [CLOUD_BUILD_GUIDE.md](docs/CLOUD_BUILD_GUIDE.md) for deployment
+4. Check `tests/fixtures/` for example MR payloads
