@@ -14,8 +14,8 @@ definition:
       type: AgentComponent
       prompt_id: "compliance_scanner_prompt"
       inputs:
-        - from: "context:goal"
-          as: "merge_request_url"
+        - from: "context:merge_request"
+          as: "merge_request_context"
       toolset:
         - "get_merge_request"
         - "list_merge_request_diffs"
@@ -54,8 +54,8 @@ definition:
       inputs:
         - from: "context:mapper.final_answer"
           as: "control_mappings"
-        - from: "context:goal"
-          as: "merge_request_url"
+        - from: "context:merge_request"
+          as: "merge_request_context"
       toolset:
         - "read_file"
         - "get_repository_file"
@@ -76,8 +76,8 @@ definition:
           as: "evidence_package"
         - from: "context:mapper.final_answer"
           as: "control_mappings"
-        - from: "context:goal"
-          as: "merge_request_url"
+        - from: "context:merge_request"
+          as: "merge_request_context"
       toolset:
         - "create_merge_request_note"
         - "create_work_item"
@@ -134,10 +134,13 @@ definition:
             }
           }
         user: |
-          Analyze this merge request for compliance issues: {{merge_request_url}}
+          Analyze this merge request for compliance issues.
 
-          Fetch the MR details, read the diffs, and scan for compliance signals.
-          Return structured JSON findings.
+          Merge Request Context:
+          {{merge_request_context}}
+
+          Use the project_id and merge_request_iid from the context above to fetch MR details with get_merge_request and list_merge_request_diffs.
+          Scan for compliance signals and return structured JSON findings.
         placeholder: history
       params:
         timeout: 300
@@ -237,12 +240,15 @@ definition:
             }
           }
         user: |
-          Collect compliance evidence for this merge request: {{merge_request_url}}
+          Collect compliance evidence for this merge request.
+
+          Merge Request Context:
+          {{merge_request_context}}
 
           Control mappings from previous analysis:
           {{control_mappings}}
 
-          Gather MR metadata, commit history, review comments, and pipeline results as audit evidence.
+          Use the project_id and merge_request_iid from the context to gather MR metadata, commit history, review comments, and pipeline results as audit evidence.
         placeholder: history
       params:
         timeout: 300
@@ -293,7 +299,10 @@ definition:
           You MUST extract the project_id and merge_request_iid from the MR URL to post comments.
           Parse the URL format: https://gitlab.com/namespace/project/-/merge_requests/IID
         user: |
-          Generate and post a compliance report for this merge request: {{merge_request_url}}
+          Generate and post a compliance report for this merge request.
+
+          Merge Request Context:
+          {{merge_request_context}}
 
           Control mappings and compliance score:
           {{control_mappings}}
@@ -302,9 +311,10 @@ definition:
           {{evidence_package}}
 
           REQUIRED ACTIONS:
-          1. Post a formatted compliance comment on the merge request
-          2. Create GitLab issues for any findings with severity >= medium
-          3. Return a summary of what was posted
+          1. Extract project_id and merge_request_iid from the context above
+          2. Post a formatted compliance comment on the merge request using create_merge_request_note
+          3. Create GitLab issues for any findings with severity >= medium using create_work_item
+          4. Return a summary of what was posted
         placeholder: history
       params:
         timeout: 300
