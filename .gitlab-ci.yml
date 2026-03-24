@@ -1,0 +1,87 @@
+# ComplianceBot — GCP Archival Pipeline
+#
+# ARCHITECTURE:
+#   The compliance scanning and analysis is done by the GitLab Duo Agent
+#   Platform (see agents/*.yml and flows/compliance-flow.yml).
+#
+#   This CI pipeline ONLY handles the optional GCP archival of compliance
+#   results to BigQuery and Cloud Storage — it does NOT do any scanning.
+#
+#   Duo Agent Platform (Scanner → Mapper → Evidence → Reporter)
+#       ↓ LLM-powered analysis, posts MR comments, creates issues
+#   CI Pipeline (this file)
+#       ↓ archives findings to BigQuery + Cloud Storage
+#   Dashboard (dashboard/app.py)
+#       ↓ reads from BigQuery for analytics
+#
+
+stages:
+  - archive
+
+# Archive compliance results to GCP (BigQuery + Cloud Storage)
+#
+# Manually triggered — run via CI/CD → Pipelines → "Run pipeline":
+#   1. Add variable: GCP_SERVICE_ACCOUNT_KEY = base64-encoded SA JSON
+#   2. Click "Run pipeline"
+#
+archive-to-gcp:
+  stage: archive
+  image: python:3.11-slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "api"'
+      when: always
+  variables:
+    GCP_PROJECT_ID: "compliancebot-gitlab-hackathon"
+    GCP_REGION: "us-central1"
+    BIGQUERY_DATASET: "compliance"
+    GCS_BUCKET: "compliance-evidence-compliancebot-gitlab-hackathon"
+  before_script:
+    - pip install --quiet -r requirements.txt
+  script:
+    - |
+      if [ -z "$GCP_SERVICE_ACCOUNT_KEY" ]; then
+        echo "GCP_SERVICE_ACCOUNT_KEY not provided."
+        echo "Add it in the 'Run pipeline' variables dialog."
+        exit 1
+      fi
+    - |
+      if [ ! -f compliance-results.json ]; then
+        echo "No compliance-results.json found — generating sample payload."
+        python -c "
+      import json, datetime
+      payload = {
+        'project_id': '${CI_PROJECT_PATH:-gitlab-ai-hackathon/participants/35481656}',
+        'project_name': '${CI_PROJECT_NAME:-ComplianceBot Flow}',
+        'mr_id': 10,
+        'mr_url': '${CI_PROJECT_URL:-https://gitlab.com/gitlab-ai-hackathon/participants/35481656}/-/merge_requests/10',
+        'mr_title': 'Demo compliance analysis',
+        'compliance_score': 0,
+        'frameworks': ['SOC2', 'ISO27001', 'PCI-DSS'],
+        'generated_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        'findings': [
+          {'control_id': 'SOC2-CC6.1', 'severity': 'critical', 'description': 'Hardcoded credential found', 'evidence_type': 'hardcoded_secret', 'file_path': 'app/db.py', 'remediation': 'Move to secrets manager', 'framework': 'SOC2'},
+          {'control_id': 'SOC2-CC6.7', 'severity': 'high', 'description': 'Weak encryption: MD5 hashing', 'evidence_type': 'weak_encryption', 'file_path': 'auth/utils.py', 'remediation': 'Use bcrypt or Argon2', 'framework': 'SOC2'},
+          {'control_id': 'SOC2-CC7.1', 'severity': 'high', 'description': 'Dependency CVE detected', 'evidence_type': 'dependency_vulnerability', 'file_path': 'requirements.txt', 'remediation': 'Upgrade package', 'framework': 'SOC2'},
+          {'control_id': 'SOC2-CC6.1', 'severity': 'medium', 'description': 'SQL injection risk', 'evidence_type': 'authentication_change', 'file_path': 'api/users.py', 'remediation': 'Use parameterised queries', 'framework': 'SOC2'}
+        ]
+      }
+      with open('compliance-results.json', 'w') as f:
+        json.dump(payload, f, indent=2)
+      print('Created sample compliance-results.json')
+      "
+      fi
+    - python -m src.gcp.cli archive
+      --project-id "${CI_PROJECT_PATH:-gitlab-ai-hackathon/participants/35481656}"
+      --project-name "${CI_PROJECT_NAME:-ComplianceBot Flow}"
+      --mr-id "10"
+      --mr-url "${CI_PROJECT_URL:-https://gitlab.com/gitlab-ai-hackathon/participants/35481656}/-/merge_requests/10"
+      --input compliance-results.json
+      --output archive-results.json
+    - echo "Archive complete."
+    - cat archive-results.json
+  artifacts:
+    paths:
+      - archive-results.json
+    expire_in: 90 days

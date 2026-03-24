@@ -1,11 +1,11 @@
-# ComplianceBot Flow - Hackathon Submission Checklist
+# ComplianceBot Flow - Release Checklist
 
-> **Deadline: March 25, 2026 @ 2:00 PM EDT**
+> Use this checklist before publishing to GitLab.
 
 ## ✅ Completed
 
 ### Repository Setup
-- [x] Public repo in GitLab AI Hackathon group
+- [x] Public repo in GitLab
 - [x] MIT License at repo root
 - [x] README.md with architecture and instructions
 - [x] AGENTS.md with agent behavior guidelines
@@ -59,19 +59,12 @@
   - [ ] Show GCP integration (optional)
   - [ ] Impact statement
 
-### Devpost Submission
-- [ ] Go to [gitlab.devpost.com](https://gitlab.devpost.com)
-- [ ] Create submission
-- [ ] Add project URL: `https://gitlab.com/gitlab-ai-hackathon/participants/35481656`
-- [ ] Add demo video URL
-- [ ] Write description (copy from README)
-- [ ] Select prizes:
-  - [ ] Grand Prize ($15,000)
-  - [ ] Most Impactful ($5,000)
-  - [ ] Most Technically Impressive ($5,000)
-  - [ ] GitLab + Google Cloud ($10,000)
-  - [ ] GitLab + Anthropic ($10,000)
-- [ ] Submit before deadline
+### GitLab Submission
+- [ ] Confirm project description is updated
+- [ ] Confirm README includes setup + usage + architecture
+- [ ] Add demo video URL (if required)
+- [ ] Verify repository links and screenshots
+- [ ] Finalize release notes
 
 ### Optional Enhancements
 - [ ] Set up GCP credentials in GitLab CI/CD
@@ -90,17 +83,7 @@
 | GCP Code | ✅ Ready |
 | GCP Credentials | ⏳ Not configured |
 | Demo Video | ⏳ Not recorded |
-| Devpost | ⏳ Not submitted |
-
-## 🎯 Prize Eligibility
-
-| Prize | Amount | Requirement | Status |
-|-------|--------|-------------|--------|
-| Grand Prize | $15,000 | Best overall | ✅ Eligible |
-| Most Impactful | $5,000 | Real-world impact | ✅ Eligible |
-| Most Technical | $5,000 | Platform depth | ✅ Eligible |
-| Google Cloud | $10,000 | Use GCP + GitLab | ✅ Integrated |
-| Anthropic | $10,000 | Use Claude via GitLab | ✅ Via Duo |
+| Release Notes | ⏳ Not finalized |
 
 ## 📝 Quick Commands
 
@@ -120,8 +103,6 @@ python -m pytest tests/ -v
 
 ## 🔗 Links
 
-- **Project**: https://gitlab.com/gitlab-ai-hackathon/participants/35481656
-- **Test MR**: https://gitlab.com/gitlab-ai-hackathon/participants/35481656/-/merge_requests/10
-- **Issues**: https://gitlab.com/gitlab-ai-hackathon/participants/35481656/-/issues
-- **Hackathon**: https://gitlab.devpost.com
-- **Deadline**: March 25, 2026 @ 2:00 PM EDT
+- **Project**: https://gitlab.com/<your-group>/<your-project>
+- **Test MR**: https://gitlab.com/<your-group>/<your-project>/-/merge_requests/<iid>
+- **Issues**: https://gitlab.com/<your-group>/<your-project>/-/issues

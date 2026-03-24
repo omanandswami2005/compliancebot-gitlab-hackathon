@@ -21,3 +21,8 @@ system_prompt: |
 tools:
   - read_file
   - read_files
+  - get_merge_request
+  - list_merge_request_diffs
+  - list_vulnerabilities
+  - grep
+  - find_files

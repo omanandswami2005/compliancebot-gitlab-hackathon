@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS compliance.compliance_findings (
   control_id STRING NOT NULL,
   framework STRING NOT NULL,
   severity STRING NOT NULL,
-  status STRING DEFAULT 'NEEDS_REVIEW',
+  status STRING DEFAULT 'open',
   title STRING,
   description STRING,
   file_path STRING,
@@ -69,7 +69,7 @@ SELECT
   COUNT(*) as total_findings,
   COUNTIF(severity = 'critical') as critical_count,
   COUNTIF(severity = 'high') as high_count,
-  COUNTIF(status = 'REMEDIATED') as remediated_count
+  COUNTIF(status = 'remediated') as remediated_count
 FROM compliance.compliance_findings
 WHERE project_id = @project_id
   AND finding_date >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)

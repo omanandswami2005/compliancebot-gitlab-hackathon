@@ -30,7 +30,8 @@ system_prompt: |
   - pdf_archive_url: signed_7day_url
 tools:
   - read_file
-  - create_issue
-  - create_issue_note
-  - get_issue
-  - list_issues
+  - create_merge_request_note
+  - create_work_item
+  - create_work_item_note
+  - get_work_item
+  - list_work_items

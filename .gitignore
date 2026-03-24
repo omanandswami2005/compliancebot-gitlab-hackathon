@@ -4,5 +4,19 @@ __pycache__
 /reports
 .pdf
 next.md
+
+# Local output files
+compliance-results.json
+archive-results.json
+
+# CI entrypoint (scanning is done by Duo Agent Platform, not CI)
+src/agents/run_scan.py
+
+# Local demo script (not part of submission)
+scripts/demo_scan.py
+
+# Tests that depend on CI pipeline approach (not part of submission)
+tests/test_reporter_integration.py
+tests/test_gcp_cli.py
 docs/TESTING_AND_SUBMISSION.md
 TESTING_QUICK_REFERENCE.md

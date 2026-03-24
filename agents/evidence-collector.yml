@@ -28,6 +28,10 @@ system_prompt: |
 tools:
   - read_file
   - get_repository_file
+  - get_merge_request
+  - list_all_merge_request_notes
+  - list_commits
+  - get_commit
   - list_project_audit_events
   - list_group_audit_events
   - gitlab_api_get

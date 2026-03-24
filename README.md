@@ -4,9 +4,8 @@
 
 An AI-powered multi-agent compliance flow built on the GitLab Duo Agent Platform. Automatically scans merge requests for compliance violations, maps findings to SOC 2/ISO 27001/PCI-DSS controls, and generates audit-ready reports.
 
-[![GitLab AI Hackathon 2026](https://img.shields.io/badge/GitLab%20AI%20Hackathon-2026-orange)](https://gitlab.devpost.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Latest Release](https://img.shields.io/badge/release-v1.2.0-green)](https://gitlab.com/gitlab-ai-hackathon/participants/35481656/-/tags)
+[![Latest Release](https://img.shields.io/badge/release-v1.2.0-green)](#)
 
 ## 🎯 What It Does
 
@@ -63,20 +62,33 @@ An AI-powered multi-agent compliance flow built on the GitLab Duo Agent Platform
 
 ## 🚀 Quick Start
 
-### 1. Trigger the Flow
+### Local-First Approach (Recommended)
 
-On any merge request, mention the flow:
+No pipeline access required. Run compliance scans locally:
+
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Scan with demo data
+python -m src.local_runner scan --mode demo
+
+# 3. Save report
+python -m src.local_runner scan --mode demo --output report.json
+
+# 4. Archive to GCP (if configured with credentials)
+python -m src.local_runner scan --mode demo --archive
 ```
-@ai-compliance-bot-flow-gitlab-ai-hackathon Please analyze this MR for compliance issues.
-```
 
-Or assign the flow as a reviewer.
+**See [docs/LOCAL_RUNNER.md](docs/LOCAL_RUNNER.md) for detailed local runner guide.**
 
-### 2. View Results
+### GitLab Pipeline (When You Have Maintainer Access)
 
-- **MR Comment**: Compliance score badge with findings table
-- **Issues**: Auto-created for each finding (severity >= medium)
-- **Session Log**: Automate → Sessions → View agent reasoning
+Trigger the flow on MR:
+
+1. **Mention**: `@ai-compliance-bot-flow-gitlab-ai-hackathon Please analyze this MR`
+2. **Assign**: Assign the flow as a reviewer
+3. **Auto**: Set up `.gitlab-ci.yml` trigger
 
 ## 📊 What Gets Detected
 
@@ -210,28 +222,15 @@ python -m pytest tests/ --cov=src --cov-report=html
 python -m src.gcp.cli status
 ```
 
-## 🏆 Hackathon Submission
+## ✅ Release Checklist
 
-**GitLab AI Hackathon 2026** - Deadline: March 25, 2026 @ 2:00 PM EDT
-
-### Checklist
-
-- [x] Public GitLab repo in hackathon group
+- [x] Public GitLab repository
 - [x] 4 custom agents published to AI Catalog
 - [x] 1 multi-agent flow published
 - [x] MIT License
 - [x] Working demo (MR !10)
 - [ ] 3-minute demo video
-- [ ] Submit to [gitlab.devpost.com](https://gitlab.devpost.com)
-
-### Prize Targets
-
-| Prize | Amount | Status |
-|-------|--------|--------|
-| Grand Prize | $15,000 | 🎯 Target |
-| Most Impactful | $5,000 | 🎯 Target |
-| Google Cloud Bonus | $10,000 | ✅ GCP integrated |
-| Anthropic Bonus | $10,000 | ✅ Claude via Duo |
+- [ ] Final repository validation
 
 ## 📜 License
 
@@ -245,4 +244,4 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 ---
 
-**Built for GitLab AI Hackathon 2026** | [View on GitLab](https://gitlab.com/gitlab-ai-hackathon/participants/35481656)
+**Compliance automation for GitLab merge requests**
