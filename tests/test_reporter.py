@@ -98,15 +98,23 @@ class TestComplianceReporter:
         assert "remediation" in finding
         assert "timeline" in finding
 
-    @patch('agents.reporter.template_env')
-    def test_jinja2_template_rendering(self, mock_template):
-        """Test Jinja2 template rendering."""
-        mock_template_obj = MagicMock()
-        mock_template.get_template.return_value = mock_template_obj
-        mock_template_obj.render.return_value = "Rendered report"
-        
-        # Template should render successfully
-        assert mock_template_obj.render is not None
+    def test_jinja2_template_rendering(self):
+        """Test Jinja2 template rendering with compliance report template."""
+        from jinja2 import Environment, FileSystemLoader
+        import os
+
+        template_dir = os.path.join(
+            os.path.dirname(__file__), '..', 'src', 'templates'
+        )
+        if os.path.isdir(template_dir):
+            env = Environment(loader=FileSystemLoader(template_dir))
+            templates = env.list_templates()
+            assert len(templates) > 0, "Template directory should contain templates"
+        else:
+            # Template directory may not exist yet — just verify Jinja2 works
+            env = Environment()
+            t = env.from_string("Score: {{ score }}")
+            assert t.render(score=85) == "Score: 85"
 
     def test_report_executive_summary(self):
         """Test report includes executive summary (max 3 sentences)."""

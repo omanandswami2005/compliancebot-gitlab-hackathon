@@ -4,6 +4,12 @@
 
 ComplianceBot is a multi-agent compliance flow that automatically analyzes merge requests for security and compliance issues. It maps findings to SOC 2, ISO 27001, PCI-DSS, and HIPAA controls, then generates audit-ready reports.
 
+**Two Execution Modes:**
+- 🖥️ **Local-First (No Pipeline Access Required)** - Run agents locally on your machine, Optional GCP archival
+- 🔄 **GitLab Pipeline (With Maintainer Access)** - Integrate into CI/CD, Automatic scans on every MR
+
+Learn more: [Local Runner Guide](docs/LOCAL_RUNNER.md)
+
 ## How It Works
 
 ```
@@ -180,3 +186,119 @@ Test the flow on MR !10 which contains intentional violations:
 - Outdated dependencies
 
 Expected result: Score ~0/100, 20+ issues created.
+
+## Canonical Payload Schema
+
+All agents produce findings in a **canonical JSON format** that ensures consistency across:
+- Local runners (manual/automated)
+- GitLab pipeline execution
+- Dashboard analytics
+- GCP archival
+
+See [src/utils/payload_schema.py](src/utils/payload_schema.py) for the complete schema.
+
+### Key Types
+
+**ComplianceReport** - Container for a complete scan
+```python
+{
+    "report_id": "project-123-2026-03-24-abc123",
+    "project_id": "project-123",
+    "compliance_score": 45,  # 0-100
+    "findings": [ ... ],      # List of ComplianceFinding
+    "stats": {
+        "total_findings": 5,
+        "critical": 2,
+        "frameworks_covered": 3
+    },
+    "archived_to": ["bigquery", "gcs"]  # Where report was sent
+}
+```
+
+**ComplianceFinding** - Single security/compliance issue
+```python
+{
+    "id": "project-123-42-...",
+    "title": "Hardcoded API key detected",
+    "severity": "critical",           # critical|high|medium|low
+    "finding_type": "secret_hardcoded",
+    "controls": [
+        {
+            "id": "ISO27001-A.10.1.1",
+            "framework": "ISO 27001"
+        }
+    ],
+    "remediation_steps": ["Move to env var", "Rotate key"],
+    "status": "open",                 # open|remediated|accepted
+    "file_path": "src/auth.py",
+    "line_number": 42
+}
+```
+
+### Enums (Controlled Vocabularies)
+
+All agents must use these standard enums:
+
+| Field | Values |
+|-------|--------|
+| **Severity** | `critical`, `high`, `medium`, `low` |
+| **Status** | `open`, `remediated`, `accepted`, `false_positive` |
+| **Framework** | `SOC 2`, `ISO 27001`, `PCI-DSS`, `HIPAA`, `Custom` |
+| **FindingType** | `secret_hardcoded`, `encryption_weak`, `auth_vulnerability`, `dependency_vulnerable`, `config_insecure`, `process_violation`, `data_exposure`, `compliance_violation` |
+
+## Local Runner Integration
+
+The canonical schema enables **local-first execution** without pipeline access:
+
+```bash
+# Scan locally on your machine
+python -m src.local_runner scan --mode demo
+
+# Save report
+python -m src.local_runner scan --json mr.json --output report.json
+
+# Archive to GCP (if credentials configured)
+python -m src.local_runner archive --report report.json --to bigquery,gcs
+```
+
+See [docs/LOCAL_RUNNER.md](docs/LOCAL_RUNNER.md) for full guide.
+
+### How Agents are Invoked Locally
+
+```
+Input: MR JSON
+       ↓
+[Scanner Agent] → Raw findings (unstructured)
+       ↓
+[Mapper Agent] → Mapped to framework controls
+       ↓
+[Evidence Collector] → Gathered audit evidence
+       ↓
+[PayloadConverter] → ComplianceFinding[] (canonical)
+       ↓
+Output: ComplianceReport JSON
+```
+
+See [src/utils/payload_converter.py](src/utils/payload_converter.py) for converter implementation.
+
+## Pipeline Integration (Future)
+
+When you get GitLab Maintainer access, the architecture is already prepared:
+
+1. **No Code Changes Needed** - Canonical schema is version-stable
+2. **Same Agents** - Agents output the same ComplianceReport format
+3. **Same GCP Destination** - Pipeline just calls same archival code
+4. **Drop-in Replacement** - Pipeline becomes thin orchestration wrapper
+
+```yaml
+# .gitlab-ci.yml (future, after permission granted)
+compliance-scan:
+  stage: quality
+  script:
+    - python -m src.local_runner scan \
+        --json $CI_MERGE_REQUEST_JSON \
+        --project $CI_PROJECT_ID \
+        --archive
+```
+
+The local runner **IS the pipeline agent** - no separate code path needed.

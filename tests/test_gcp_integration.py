@@ -84,12 +84,12 @@ class TestBigQueryLogger:
         logger = BigQueryLogger()
         
         # SOC2 controls
-        assert logger._extract_framework({'control_ids': ['SOC2-CC6.1']}) == 'SOC2'
-        assert logger._extract_framework({'control_ids': ['CC6.1']}) == 'SOC2'
+        assert logger._extract_framework({'control_ids': ['SOC2-CC6.1']}) == 'SOC 2'
+        assert logger._extract_framework({'control_ids': ['CC6.1']}) == 'SOC 2'
         
         # ISO controls
-        assert logger._extract_framework({'control_ids': ['ISO27001-A.8.2']}) == 'ISO27001'
-        assert logger._extract_framework({'control_ids': ['A.8.2.3']}) == 'ISO27001'
+        assert logger._extract_framework({'control_ids': ['ISO27001-A.8.2']}) == 'ISO 27001'
+        assert logger._extract_framework({'control_ids': ['A.8.2.3']}) == 'ISO 27001'
         
         # PCI-DSS
         assert logger._extract_framework({'control_ids': ['PCI-DSS-6.3']}) == 'PCI-DSS'

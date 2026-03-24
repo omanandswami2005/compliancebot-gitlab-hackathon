@@ -34,19 +34,15 @@
 | **Platform** | [gitlab.devpost.com](https://gitlab.devpost.com) |
 | **Deadline** | March 25, 2026 @ 2:00 PM EDT |
 | **Participants** | 4,913+ registered |
-| **Prize Pool** | $65,000 total |
-| **Our Target Prizes** | Grand Prize ($15K) + Anthropic Bonus ($10K) + Google Cloud Bonus ($10K) |
+| **Focus** | Production-ready compliance automation with measurable SDLC impact |
+| **Target Outcome** | Reusable GitLab flow with optional GCP archival |
 
-### Prize Breakdown Relevant to Us
-| Prize | Amount | Requirement |
-|---|---|---|
-| Grand Prize | $15,000 | Best overall project |
-| Most Impactful | $5,000 | Real-world SDLC impact |
-| Most Technically Impressive | $5,000 | Platform depth |
-| GitLab + Anthropic Grand Prize | $10,000 | Use Claude through GitLab |
-| GitLab + Anthropic Runner Up | $3,500 | Use Claude through GitLab |
-| GitLab + Google Grand Prize | $10,000 | Use Google Cloud + GitLab |
-| Honorable Mention | $500 each | 6 winners |
+### Primary Technical Goals
+| Goal | Requirement |
+|---|---|
+| Platform depth | Use GitLab Duo Agent Platform agents and flow orchestration |
+| Real-world impact | Automate compliance checks and audit evidence generation |
+| Cloud integration | Archive findings and reports to Google Cloud (optional) |
 
 ### Hard Requirements
 - ✅ **Public GitLab repo** in the [GitLab AI Hackathon group](https://gitlab.com/gitlab-ai-hackathon)
@@ -494,10 +490,10 @@ compliance-bot:
 
 ---
 
-## 7. Anthropic Claude Integration (Bonus Prize)
+## 7. Anthropic Claude Integration
 
-### Why This Wins the $10K Anthropic Prize
-The Anthropic bonus specifically requires **running Anthropic through GitLab** (not direct API calls). Our flow uses Claude Sonnet 4 natively through the GitLab Duo Agent Platform gateway — exactly what the prize targets.
+### Integration Rationale
+This flow runs Anthropic models through GitLab Duo Agent Platform (not direct API calls), which keeps inference centralized in GitLab's managed agent architecture.
 
 ### Claude's Role in ComplianceBot
 
@@ -579,9 +575,9 @@ commands:
 
 ---
 
-## 8. Google Cloud Integration (Bonus Prize)
+## 8. Google Cloud Integration
 
-### Why This Wins the $10K Google Cloud Prize
+### Integration Rationale
 
 #### Integration Points
 

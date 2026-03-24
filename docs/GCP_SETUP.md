@@ -17,14 +17,45 @@ ComplianceBot's GCP integration provides:
 - ⚠️ Skip Cloud Storage archival (with warning)
 - ⚠️ Use fallback narrative generation (without AI enhancement)
 
-## Quick Start
+## Two Activation Paths
+
+### Path 1: Local-First (No Permission Required) ⭐ Recommended for Hackathon
+
+Run ComplianceBot locally on your machine, then archive to GCP:
+
+```bash
+# 1. Scan locally (no pipeline needed)
+python -m src.local_runner scan --json mr.json --project my-project
+
+# 2. Archive results to GCP (with local credentials)
+python -m src.local_runner scan --mode demo --archive
+```
+
+**Benefits:**
+- Works immediately without pipeline access
+- Full control over when/what to scan
+- Supports batch processing
+- Non-blocking - GCP failures don't affect scans
+
+**Then, if you get Maintainer permission later:**
+- Update GitLab CI/CD variables
+- Add `.gitlab-ci.yml` step
+- Same code works in pipeline (no migration needed)
+
+See [docs/LOCAL_RUNNER.md](LOCAL_RUNNER.md) for detailed guide.
+
+### Path 2: Pipeline-Integrated (Maintainer Access Required)
+
+Skip this section unless you have pipeline trigger permission.
+
+## Quick Start (Local-First)
 
 ### 1. Set Environment Variables
 
-Add these to your GitLab CI/CD variables or local environment:
+For local archival to GCP:
 
 ```bash
-# Required for GCP integration
+# Required for archival
 export GCP_PROJECT_ID="your-gcp-project-id"
 export GCP_SERVICE_ACCOUNT_KEY="<base64-encoded-service-account-json>"
 
@@ -38,20 +69,31 @@ export GCS_BUCKET="compliance-evidence-${GCP_PROJECT_ID}"
 
 ```bash
 # Check if GCP is properly configured
-python -m src.gcp.cli status
+python -m src.local_runner status
 ```
 
 Expected output when configured:
 ```
 🔧 GCP Integration Status
-========================================
-  Available:    ✅ Yes
-  Configured:   ✅ Yes
-  Credentials:  ✅ Set
-  Project ID:   your-project-id
-  Region:       us-central1
-  BQ Dataset:   compliance
-  GCS Bucket:   compliance-evidence-your-project-id
+==================================================
+  available: True
+  project_id: your-project-id
+  services:
+    bigquery: True
+    gcs: True
+==================================================
+
+✅ GCP is configured and ready for archival
+```
+
+### 3. Test Local Scan + Archive
+
+```bash
+# Demo scan with archival
+python -m src.local_runner scan --mode demo --archive
+
+# With your MR
+python -m src.local_runner scan --json mr.json --project my-project --archive
 ```
 
 ## Detailed Setup
@@ -276,9 +318,60 @@ gsutil mb -l US gs://compliance-evidence-${GCP_PROJECT_ID}
 5. ✅ Rotate service account keys every 90 days
 6. ✅ Use VPC Service Controls for sensitive projects
 
+## Pipeline Integration (Future - When You Get Maintainer Access)
+
+Once you have GitLab Maintainer permission, upgrading from local-first to pipeline integration is simple:
+
+### Step 1: Add CI/CD Variables
+
+Go to **Settings > CI/CD > Variables**:
+
+| Variable | Value |
+|----------|-------|
+| `GCP_PROJECT_ID` | Your GCP project ID |
+| `GCP_SERVICE_ACCOUNT_KEY` | Base64-encoded key |
+| `BIGQUERY_DATASET` | `compliance` |
+| `GCS_BUCKET` | `compliance-evidence-{project}` |
+
+### Step 2: Create `.gitlab-ci.yml` Step
+
+Add to your pipeline:
+
+```yaml
+compliance-scan:
+  stage: quality
+  image: python:3.11-slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  before_script:
+    - pip install -r requirements.txt
+  script:
+    # Same command you used locally!
+    - python -m src.local_runner scan \
+        --json $CI_MERGE_REQUEST_JSON \
+        --project "$CI_PROJECT_ID" \
+        --archive
+  artifacts:
+    paths:
+      - compliance-report-*.json
+    expire_in: 30 days
+```
+
+### Why This Works (Zero Code Changes)
+
+The local runner was designed to work everywhere because:
+
+✅ **Canonical Schema** - Same `ComplianceReport` format locally and in pipeline  
+✅ **Portable Agents** - Agents are independent of execution context  
+✅ **GCP Client Agnostic** - Uses environment variables, works anywhere  
+✅ **No Git Dependency** - Doesn't require pipeline-specific context  
+
+**Result:** Your local development code IS the pipeline code. No migration, no refactoring.
+
 ## References
 
 - [Google Cloud BigQuery Documentation](https://cloud.google.com/bigquery/docs)
 - [Google Cloud Storage Documentation](https://cloud.google.com/storage/docs)
 - [Vertex AI Generative AI Documentation](https://cloud.google.com/vertex-ai/docs/generative-ai/start/quickstarts/quickstart-multimodal)
 - [Service Account Best Practices](https://cloud.google.com/iam/docs/best-practices-service-accounts)
+- [ComplianceBot Local Runner Guide](LOCAL_RUNNER.md)

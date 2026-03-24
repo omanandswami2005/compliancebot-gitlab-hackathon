@@ -110,21 +110,39 @@ class BigQueryLogger:
             finding_date = datetime.now(timezone.utc).isoformat()
             
             for finding in findings:
+                remediation_value = finding.get('remediation_steps', finding.get('remediation'))
+                if isinstance(remediation_value, list):
+                    remediation_value = "\n".join(str(step) for step in remediation_value)
+
+                # Extract control_id safely from control_ids list
+                control_ids = finding.get('control_ids', [])
+                if isinstance(control_ids, list) and control_ids:
+                    default_control_id = control_ids[0]
+                else:
+                    default_control_id = 'UNKNOWN'
+
+                # Extract file_path safely from file_paths list
+                file_paths = finding.get('file_paths', [])
+                if isinstance(file_paths, list) and file_paths:
+                    default_file_path = file_paths[0]
+                else:
+                    default_file_path = None
+
                 record = ComplianceFindingRecord(
                     project_id=project_id,
                     mr_id=mr_id,
                     mr_url=mr_url,
-                    control_id=finding.get('control_id', finding.get('control_ids', ['UNKNOWN'])[0] if isinstance(finding.get('control_ids'), list) else 'UNKNOWN'),
+                    control_id=finding.get('control_id', default_control_id),
                     framework=finding.get('framework', self._extract_framework(finding)),
                     severity=finding.get('severity', 'unknown'),
-                    status='NEEDS_REVIEW',
+                    status='open',
                     title=finding.get('title', finding.get('description', '')[:100]),
                     description=finding.get('description', ''),
-                    file_path=finding.get('file_path', finding.get('file_paths', [None])[0] if isinstance(finding.get('file_paths'), list) else None),
+                    file_path=finding.get('file_path', default_file_path),
                     finding_date=finding_date,
                     compliance_score=compliance_score,
                     evidence_hash=evidence_hash,
-                    remediation_steps=finding.get('remediation_steps', finding.get('remediation')),
+                    remediation_steps=remediation_value,
                     pipeline_id=finding.get('pipeline_id')
                 )
                 rows_to_insert.append(asdict(record))
@@ -171,10 +189,10 @@ class BigQueryLogger:
         
         for cid in control_ids:
             cid_upper = str(cid).upper()
-            if 'SOC2' in cid_upper or cid_upper.startswith('CC'):
-                return 'SOC2'
+            if 'SOC2' in cid_upper or 'SOC 2' in cid_upper or cid_upper.startswith('CC'):
+                return 'SOC 2'
             elif 'ISO' in cid_upper or cid_upper.startswith('A.'):
-                return 'ISO27001'
+                return 'ISO 27001'
             elif 'PCI' in cid_upper:
                 return 'PCI-DSS'
             elif 'HIPAA' in cid_upper:
