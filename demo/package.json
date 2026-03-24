@@ -1,0 +1,20 @@
+{
+  "name": "compliance-demo-app",
+  "version": "1.0.0",
+  "description": "Demo app with intentional vulnerable dependencies",
+  "dependencies": {
+    "express": "^3.0.0",
+    "mongoose": "^5.2.0",
+    "jsonwebtoken": "^8.0.0",
+    "lodash": "4.17.11",
+    "moment": "2.19.2",
+    "minimist": "0.0.8",
+    "node-forge": "0.6.33",
+    "axios": "0.18.0",
+    "handlebars": "4.0.11",
+    "serialize-javascript": "1.7.0"
+  },
+  "devDependencies": {
+    "jest": "^24.0.0"
+  }
+}
